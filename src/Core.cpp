@@ -39,7 +39,7 @@ namespace PluginCore
             throw std::runtime_error("Каталог плагинов не найден: " + pluginDir.string());
         }
 
-#ifdef QT_DEBUG
+#ifdef DEBUG
         const std::regex re(R"(^lib([^\.]*)\.Debug\.so$)");
 #else
         const std::regex re(R"(^lib([^\.]*)\.so$)");
