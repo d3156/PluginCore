@@ -27,9 +27,9 @@ namespace PluginCore
     {
         fs::path pluginDir;
 
-        if (const char *env = std::getenv("SP_PLUGINS_DIR")) {
+        if (const char *env = std::getenv("PLUGINS_DIR")) {
             pluginDir = fs::path(env);
-            std::cout << G_CORE << "Задан путь до плагинов SP_PLUGINS_DIR = " << pluginDir.string();
+            std::cout << G_CORE << "Задан путь до плагинов PLUGINS_DIR = " << pluginDir.string();
         } else {
             pluginDir = fs::path(client_plugins_path);
             std::cout << G_CORE << "Используется стандартный путь до плагинов " << pluginDir.string();
