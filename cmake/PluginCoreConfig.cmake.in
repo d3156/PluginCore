@@ -1,0 +1,2 @@
+find_package(PluginCore CONFIG REQUIRED)
+target_link_libraries(app PRIVATE d3156::PluginCore)
