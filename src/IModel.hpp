@@ -44,14 +44,14 @@ namespace d3156
                 auto it = find(model->name());
                 if (it != end()) {
                     delete model;
-                    std::cout << Y_CORE << "Модель уже зарегистрирована :" << model->name().c_str();
+                    std::cout << Y_CORE << "Model already registred :" << model->name().c_str() << "\n";
                     return static_cast<ConcreteModel *>(it->second);
                 } else {
                     model->init();
                     insert({model->name(), model});
                     regSeq_.push_back(model);
-                    std::cout << G_CORE << "Модель зарегистрирована успешно :"
-                              << "[Приоритет удаления" << model->deleteOrder() << "]" << model->name().c_str();
+                    std::cout << G_CORE << "Model registred success :"
+                              << "[Delete order " << model->deleteOrder() << "]" << model->name().c_str() << "\n";
                     return model;
                 }
             }
