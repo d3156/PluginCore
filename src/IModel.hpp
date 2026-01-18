@@ -65,6 +65,8 @@ namespace d3156
 
             bool contains(model_name name) { return find(name) != end(); }
 
+            void reset();
+
             ~ModelsStorage();
 
         private:
