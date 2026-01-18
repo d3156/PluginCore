@@ -50,8 +50,7 @@ namespace d3156
                     model->init();
                     insert({model->name(), model});
                     regSeq_.push_back(model);
-                    std::cout << G_CORE << "Model registred success :"
-                              << "[Delete order " << model->deleteOrder() << "] " << model->name().c_str() << "\n";
+                    std::cout << G_CORE << "Model registred success [Delete order " << model->deleteOrder() << "] " << model->name().c_str() << "\n";
                     return model;
                 }
             }
