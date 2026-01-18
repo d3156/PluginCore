@@ -107,14 +107,17 @@ namespace d3156
 
         Core::~Core()
         {
+            std::cout << G_CORE << "Destory CORE\n";
             /// Сначала удаляем плагины, чтобы они на обратились к несущетсвующей модели
             for (auto& i :  libs_) {
+                std::cout << G_CORE << "Destroy plugin " << i.first << " \n";
                 if (i.second->plugin && i.second->destroy) i.second->destroy(i.second->plugin);
                 i.second->plugin = nullptr;
             }
             /// Затем удаляются модели
             models_.reset();
             libs_.clear(); /// И только потом выгружаем символы.
+            std::cout << G_CORE << "CORE destroyed\n";
         }
 
         template <class Fn> Fn sym(void *h_, const char *name)
