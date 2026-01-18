@@ -52,10 +52,6 @@ target_include_directories({o.name}
         ${{CMAKE_CURRENT_SOURCE_DIR}}/include
 )
 
-# PluginCore is a STATIC lib in your repo; link it in your host build, not necessarily in plugin.
-# If you build plugins together with PluginCore sources, you can link against it:
-# target_link_libraries({o.name} PRIVATE PluginCore)
-
 # Linux: produce lib{o.name}.so by default
 set_target_properties({o.name} PROPERTIES OUTPUT_NAME "{o.name}")
 """
@@ -65,9 +61,9 @@ def plugin_cpp(o: Opt) -> str:
     model_stub = ""
     if o.with_model:
         model_stub = f"""
-class {o.model_cls} final : public PluginCore::IModel {{
+class {o.model_cls} final : public d3156::PluginCore::IModel {{
 public:
-    PluginCore::model_name name() override {{ return "{o.model_cls}"; }}
+    d3156::PluginCore::model_name name() override {{ return "{o.model_cls}"; }}
     void init() override {{
         // TODO: init storage/resources here (ctor must be empty by convention)
     }}
@@ -77,13 +73,13 @@ public:
 #include <PluginCore/IModel.hpp>
 {model_include}
 
-class {o.cls} final : public PluginCore::IPlugin {{
+class {o.cls} final : public d3156::PluginCore::IPlugin {{
 public:
-    void registerArgs(Args::Builder& bldr) override {{
+    void registerArgs(d3156::Args::Builder& bldr) override {{
         // TODO: bldr.addOption(...) / bldr.addParam(...) / bldr.addFlag(...)
     }}
 
-    void registerModels(PluginCore::ModelsStorage& models) override {{
+    void registerModels(d3156::PluginCore::ModelsStorage& models) override {{
         // Provide model(s)
 {"        models.registerModel(new " + o.model_cls + "());" if o.with_model else "        // TODO: models.registerModel(new YourModel());"}
         // Or consume model(s)
@@ -97,12 +93,12 @@ public:
 
 {model_stub}
 
-// ABI required by PluginCore::Core (dlsym uses exact names)
-extern "C" PluginCore::IPlugin* create_plugin() {{
+// ABI required by d3156::PluginCore::Core (dlsym uses exact names)
+extern "C" d3156::PluginCore::IPlugin* create_plugin() {{
     return new {o.cls}();
 }}
 
-extern "C" void destroy_plugin(PluginCore::IPlugin* p) {{
+extern "C" void destroy_plugin(d3156::PluginCore::IPlugin* p) {{
     delete p;
 }}
 """
@@ -111,9 +107,9 @@ def model_hpp(o: Opt) -> str:
     return f"""#pragma once
 #include <PluginCore/IModel.hpp>
 
-class {o.model_cls} final : public PluginCore::IModel {{
+class {o.model_cls} final : public d3156::PluginCore::IModel {{
 public:
-    PluginCore::model_name name() override {{ return "{o.model_cls}"; }}
+    d3156::PluginCore::model_name name() override {{ return "{o.model_cls}"; }}
     int deleteOrder() override {{ return 0; }}
 
     void init() override {{
