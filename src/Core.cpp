@@ -113,7 +113,7 @@ namespace d3156
                 i.second->plugin = nullptr;
             }
             /// Затем удаляются модели
-            models_.clear();
+            models_.reset();
             libs_.clear(); /// И только потом выгружаем символы.
         }
 

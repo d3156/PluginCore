@@ -7,6 +7,11 @@ namespace d3156
     {
         ModelsStorage::~ModelsStorage()
         {
+            if (size()) reset();
+        }
+
+        void ModelsStorage::reset()
+        {
             std::set<int> orders;
             for (auto i : *this) orders.insert(i.second->deleteOrder());
             for (int ord : orders)
@@ -19,6 +24,5 @@ namespace d3156
                     } else
                         ++i;
         }
-
     }
 }
