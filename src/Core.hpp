@@ -1,13 +1,14 @@
 #pragma once
 #include "IPlugin.hpp"
 #include <memory>
+#include <unordered_map>
 
 namespace d3156
 {
     namespace PluginCore
     {
 
-        class SharedLib; // forward
+        class IPluginLoaderLib;
 
         class Core
         {
@@ -19,11 +20,7 @@ namespace d3156
             void loadPlugins();
 
             ModelsStorage models_;
-            PluginsStorage plugins_;
-
-            // новое:
-            std::unordered_map<std::string, std::unique_ptr<SharedLib>> libs_;
-            std::unordered_map<std::string, void (*)(IPlugin *)> destroyers_;
+            std::unordered_map<std::string, std::unique_ptr<IPluginLoaderLib>> libs_;
         };
 
     } // namespace PluginCore

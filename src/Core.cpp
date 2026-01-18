@@ -1,93 +1,149 @@
 #include "Core.hpp"
-
-#include "SharedLib.hpp"
-#include <cstdlib>
+#include <dlfcn.h>
+#include "Structs.hpp"
 #include <filesystem>
 #include <iostream>
 #include <regex>
-#include <stdexcept>
 
 namespace fs = std::filesystem;
 namespace d3156
 {
+
     namespace PluginCore
     {
+        struct IPluginLoaderLib {
+            using Create    = IPlugin *(*)();
+            using Destroy   = void (*)(IPlugin *);
+            IPlugin *plugin = nullptr;
+            Destroy destroy = nullptr;
+
+            static std::unique_ptr<IPluginLoaderLib> load(std::string path);
+
+            ~IPluginLoaderLib();
+
+        private:
+            IPluginLoaderLib(void *h, Destroy destroy_, IPlugin *p) : destroy(destroy_), h_(h), plugin(p) {}
+            void *h_ = nullptr;
+        };
 
         Core::Core(int argc, char *argv[])
         {
             Args::Builder bldr;
             loadPlugins();
-            for (auto plugin : plugins_) plugin.second->registerArgs(bldr);
+            for (auto &lib : libs_) lib.second->plugin->registerArgs(bldr);
             bldr.parse(argc, argv);
-            for (auto plugin : plugins_) plugin.second->registerModels(models_);
+            for (auto &lib : libs_) lib.second->plugin->registerModels(models_);
             for (auto i : models_) i.second->postInit();
-            for (auto plugin : plugins_) plugin.second->postInit();
+            for (auto &lib : libs_) lib.second->plugin->postInit();
+        }
+
+        static std::vector<fs::path> getPaths()
+        {
+            if (std::getenv("PLUGINS_DIR") == nullptr) {
+                std::cout << G_CORE << "Using standart pluging path " << client_plugins_path << "\n";
+                if (fs::exists(client_plugins_path) && fs::is_directory(client_plugins_path))
+                    return {fs::path(client_plugins_path)};
+                return {};
+            }
+            std::string s = std::getenv("PLUGINS_DIR");
+            std::vector<fs::path> out;
+            size_t start = 0;
+            while (start <= s.size()) {
+                size_t end = s.find(':', start);
+                if (end == std::string::npos) end = s.size();
+                std::string token = s.substr(start, end - start);
+                if (!token.empty()) {
+                    if (fs::exists(token)) {
+                        out.emplace_back(token);
+                        std::cout << G_CORE << "Directory of plugins " << token << " added\n";
+                    } else
+                        std::cout << Y_CORE << "Directory from PLUGINS_DIR not found: " << token << "\n";
+                }
+                start = end + 1;
+            }
+            return out;
         }
 
         void Core::loadPlugins()
         {
-            fs::path pluginDir;
-
-            if (const char *env = std::getenv("PLUGINS_DIR")) {
-                pluginDir = fs::path(env);
-                std::cout << G_CORE << "Задан путь до плагинов PLUGINS_DIR = " << pluginDir.string();
-            } else {
-                pluginDir = fs::path(client_plugins_path);
-                std::cout << G_CORE << "Используется стандартный путь до плагинов " << pluginDir.string();
+            std::vector<fs::path> pluginsDir = getPaths();
+            if (pluginsDir.empty()) {
+                std::cout << R_CORE << "Empty existing path list for loading plugin!\n";
+                exit(-1);
             }
-
-            if (!fs::exists(pluginDir) || !fs::is_directory(pluginDir)) {
-                throw std::runtime_error("Каталог плагинов не найден: " + pluginDir.string());
-            }
-
 #ifdef DEBUG
             const std::regex re(R"(^lib([^\.]*)\.Debug\.so$)");
 #else
             const std::regex re(R"(^lib([^\.]*)\.so$)");
 #endif
+            for (const auto &pluginDir : pluginsDir) {
+                std::cout << G_CORE << "Loading plugins from dir " << pluginDir << "\n";
+                for (const auto &de :
+                     fs::recursive_directory_iterator(pluginDir, fs::directory_options::skip_permission_denied)) {
+                    if (!de.is_regular_file()) continue;
 
-            for (const auto &de : fs::directory_iterator(pluginDir)) { // итерация по файлам каталога [web:58]
-                if (!de.is_regular_file()) continue;
+                    const std::string file = de.path().filename().string();
 
-                const std::string file = de.path().filename().string();
+                    std::smatch m;
+                    if (!std::regex_match(file, m, re)) continue;
 
-                std::smatch m;
-                if (!std::regex_match(file, m, re)) continue;
+                    const std::string name    = m[1].str();
+                    const std::string absName = de.path().string();
 
-                const std::string name    = m[1].str();
-                const std::string absName = de.path().string();
+                    auto lib = IPluginLoaderLib::load(absName);
 
-                auto lib = std::make_unique<SharedLib>(absName);
+                    if (lib == nullptr) continue;
 
-                using CreateFn  = IPlugin *(*)();
-                using DestroyFn = void (*)(IPlugin *);
-
-                auto create  = lib->sym<CreateFn>("create_plugin");
-                auto destroy = lib->sym<DestroyFn>("destroy_plugin");
-
-                IPlugin *plugin = create();
-                if (!plugin) throw std::runtime_error("create_plugin вернул nullptr: " + absName);
-
-                std::cout << G_CORE << "Загружен успешно " << name;
-
-                plugins_[name]    = plugin;
-                destroyers_[name] = destroy;
-                libs_[name]       = std::move(lib); // важно: держим .so загруженной пока жив plugin
+                    std::cout << G_CORE << "Plugin " << name << " loaded\n";
+                    if (libs_.contains(name)) {
+                        std::cout << Y_CORE << "Plugin with name " << name << " already loaded!\n";
+                        std::cout << Y_CORE << "Plugin with path " << absName << " will be skiped!\n";
+                        continue;
+                    }
+                    libs_[name] = std::move(lib);
+                }
             }
         }
 
-        Core::~Core()
-        {
-            // Уничтожать через destroy_plugin, не через delete
-            for (auto &[name, plugin] : plugins_) {
-                if (!plugin) continue;
-                auto it = destroyers_.find(name);
-                if (it != destroyers_.end() && it->second) { it->second(plugin); }
-            }
+        Core::~Core() { libs_.clear(); }
 
-            plugins_.clear();
-            destroyers_.clear();
-            libs_.clear(); // после удаления объектов можно dlclose()
+        template <class Fn> Fn sym(void *h_, const char *name)
+        {
+            dlerror();
+            void *p = dlsym(h_, name);
+            if (const char *e = dlerror()) {
+                std::cout << R_CORE << "Cannot load symbol of plugin loader: dlsym failed: " << name << ": " << e << "\n";
+                return nullptr;
+            }
+            return reinterpret_cast<Fn>(p);
+        }
+
+        IPluginLoaderLib::~IPluginLoaderLib()
+        {
+            if (plugin && destroy) destroy(plugin);
+            if (h_) dlclose(h_);
+        }
+
+        std::unique_ptr<IPluginLoaderLib> IPluginLoaderLib::load(std::string path)
+        {
+            auto h_ = dlopen(path.c_str(), RTLD_NOW);
+            if (!h_) {
+                std::cout << R_CORE << "Cannot load plugin: dlopen failed: " << path << ": " << dlerror() << "\n";
+                return nullptr;
+            }
+            Create create   = sym<IPlugin *(*)()>(h_, "create_plugin");
+            Destroy destroy = sym<void (*)(IPlugin *)>(h_, "destroy_plugin");
+            if (create == nullptr || destroy == nullptr) {
+                dlclose(h_);
+                return nullptr;
+            }
+            IPlugin *plugin = create();
+            if (!plugin) {
+                std::cout << R_CORE << "Plugin " << path << " not loaded\n";
+                dlclose(h_);
+                return nullptr;
+            }
+            return std::unique_ptr<IPluginLoaderLib>(new IPluginLoaderLib(h_, destroy, plugin));
         }
 
     }

@@ -3,3 +3,4 @@ build
 release
 _CPack_Packages
 *.deb
+*/build

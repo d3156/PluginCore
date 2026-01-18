@@ -51,23 +51,56 @@ RegisterModel(model_name, new_model, T)
 Он вернёт уже существующую модель, если она зарегистрирована, иначе зарегистрирует переданную.
 
 # Минимальный хост (MyApp)
+
 Хост-приложение обычно просто создаёт `PluginCore::Core`:
 ```cpp
 #include <PluginCore/Core.hpp>
 
+#include <csignal>
+#include <cerrno>
+#include <cstring>
+#include <unistd.h>  
+
+static volatile sig_atomic_t g_stop = 0;
+
+static void on_term(int /*signum*/) {
+    g_stop = 1;
+}
+
 int main(int argc, char* argv[]) {
-    PluginCore::Core core(argc, argv);
+    struct sigaction sa;
+    std::memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = on_term;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(SIGINT, &sa, nullptr);
+    sigaction(SIGTERM, &sa, nullptr);
+    d3156::PluginCore::Core core(argc, argv);
+    while (!g_stop) pause(); 
     return 0;
 }
 ```
 
-
 Вся логика “живёт” в плагинах: они могут запускать свои потоки и/или асинхронные задачи внутри `registerModels()/postInit()`.
+Можно использовать иной способ реализации основного потока. Это пример, который мне по больше душе. 
+Если хочется ипсользовать асинхронную логику, можно не создавать отдельный поток и запускать, например boost::io_context в post_init модели.
+Тогда приложение после загрузки плагинов тоже не завершиться, но обработку сигналов остановки придётся делать внутри этой модели. 
+Я считаю, что основной поток должен оставаться за Ядром и при запросе корректного завершения от системы через сигнал, передавать команду плагинам, 
+а те в свою очередь уже могут в своих потоках использовать асинхронные модели разных библиотек, могут просто крутить свой event loop, главное корректно передать сигнал о завершении работы.
+
+# Пример хоста в PluginLoader
+
+Пример реализации `./PluginLoader`
 
 # Сборка PluginCore
 
 PluginCore собирается как статическая библиотека `PluginCore` (CMake, C++20).
 
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+cpack --config build/CPackConfig.cmake -G DEB
+```
 
 ## Как написать плагин (пошагово)
 

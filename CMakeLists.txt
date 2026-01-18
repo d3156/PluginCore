@@ -95,7 +95,7 @@ set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}") # обязате
 set(CPACK_COMPONENTS_ALL runtime dev)
 set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "d3156-plugincore")
 set(CPACK_DEBIAN_DEV_PACKAGE_NAME     "d3156-plugincore-dev")
-
+set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "d3156-plugincore (= ${PROJECT_VERSION})")
 # dev зависит от runtime (чтобы apt подтянул библиотеку)
 set(CPACK_COMPONENT_DEV_DEPENDS runtime)
 
