@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(PluginCore
-  VERSION 0.1.0
+  VERSION 1.0.0
   LANGUAGES CXX
 )
 
@@ -30,7 +30,6 @@ target_include_directories(PluginCore
 # -------------------------
 # Install (components)
 # -------------------------
-# runtime: сама библиотека
 install(TARGETS PluginCore
   EXPORT PluginCoreTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -61,7 +60,7 @@ set(PLUGINCORE_CONFIG_INSTALL_DIR
   ${CMAKE_INSTALL_LIBDIR}/cmake/PluginCore
 )
 
-# Нужен файл-шаблон cmake/PluginCoreConfig.cmake.in (см. ниже)
+# Нужен файл-шаблон cmake/PluginCoreConfig.cmake.in
 configure_package_config_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PluginCoreConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/PluginCoreConfig.cmake
@@ -85,18 +84,17 @@ install(FILES
 # CPack (DEB, 2 packages)
 # -------------------------
 set(CPACK_GENERATOR "DEB")
-set(CPACK_DEB_COMPONENT_INSTALL ON)   # компонентные .deb [web:57]
+set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
 
 set(CPACK_PACKAGE_VENDOR "d3156")
 set(CPACK_PACKAGE_CONTACT "d3156 <you@example.com>")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}") # обязательно [web:57]
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
 
 set(CPACK_COMPONENTS_ALL runtime dev)
 set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "d3156-plugincore")
 set(CPACK_DEBIAN_DEV_PACKAGE_NAME     "d3156-plugincore-dev")
 set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "d3156-plugincore (= ${PROJECT_VERSION})")
-# dev зависит от runtime (чтобы apt подтянул библиотеку)
 set(CPACK_COMPONENT_DEV_DEPENDS runtime)
 
 include(CPack)
