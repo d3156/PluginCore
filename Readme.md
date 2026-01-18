@@ -1,65 +1,73 @@
+[English](Readme.md) | [Русский](Readme.ru.md)
+
 # PluginCore
 
-PluginCore — C++ библиотека для создания приложения, полностью основанного на плагинах: хост создаёт `PluginCore::Core`, а функциональность поставляется динамическими библиотеками из каталога плагинов.
+PluginCore is a C++ library for building a fully plugin-based application: the host creates `PluginCore::Core`, and functionality is provided by dynamic libraries from the plugins directory.
 
-## Как это работает
+## How it works
 
-При создании `PluginCore::Core(argc, argv)` ядро:
-- Загружает плагины из каталога `./Plugins` (или из `PLUGINS_DIR`, если переменная окружения задана).
-- Вызывает у каждого плагина `registerArgs()`, затем парсит аргументы командной строки, затем вызывает `registerModels()`.
-- После регистрации моделей вызывает `postInit()` у всех моделей, и только потом `postInit()` у всех плагинов.
+When `PluginCore::Core(argc, argv)` is created, the core:
 
-## Каталог плагинов и имена файлов
+- Loads plugins from `./Plugins` (or from `PLUGINS_DIR` if the environment variable is set).
+- Calls `registerArgs()` for each plugin, then parses command-line arguments, then calls `registerModels()`.
+- After all models are registered, calls `postInit()` for all models, and only then calls `postInit()` for all plugins.
 
-По умолчанию плагины ищутся в `./Plugins` (константа `client_plugins_path`).  
-Путь можно переопределить переменной окружения `PLUGINS_DIR`.  
-Имена `.so` должны соответствовать шаблону:
+## Plugins directory and filenames
+
+By default, plugins are searched in `./Plugins` (constant `client_plugins_path`).
+The path can be overridden via the `PLUGINS_DIR` environment variable.
+
+Shared library names must match:
+
 - `lib<PluginName>.so` (release)
-- `lib<PluginName>.Debug.so` (если сборка с `DEBUG`)
+- `lib<PluginName>.Debug.so` (when built with `DEBUG`)
 
-## Интерфейс плагина
+## Plugin interface
 
-Плагин реализует интерфейс `PluginCore::IPlugin`.
+A plugin implements the `PluginCore::IPlugin` interface.
 
-Обязательное:
-- `void registerModels(ModelsStorage &storage)` — регистрация моделей и получение зависимостей через хранилище моделей.
+Required:
 
-Опциональное:
-- `void registerArgs(Args::Builder &bldr)` — регистрация аргументов командной строки (вызывается **до** `registerModels`).
-- `void postInit()` — дополнительная инициализация после `postInit()` всех моделей.
+- `void registerModels(ModelsStorage &storage)` — register models and obtain dependencies via the models registry.
 
-## ABI (точки входа)
+Optional:
 
-Каждый плагин обязан экспортировать C-ABI функции с точными именами:
+- `void registerArgs(Args::Builder &bldr)` — register command-line arguments (called **before** `registerModels`).
+- `void postInit()` — extra initialization after `postInit()` of all models.
+
+## ABI (entry points)
+
+Each plugin must export the following C-ABI functions with exact names:
+
 - `extern "C" PluginCore::IPlugin *create_plugin();`
 - `extern "C" void destroy_plugin(PluginCore::IPlugin *);`
 
-`Core` создаёт плагин через `create_plugin()` и уничтожает через `destroy_plugin()` (не через `delete`).
+`Core` creates a plugin via `create_plugin()` and destroys it via `destroy_plugin()` (not via `delete`).
 
-## Модели и обмен данными
+## Models and data exchange
 
-Связь между плагинами реализована через модели (`PluginCore::IModel`) и их реестр `ModelsStorage`.  
-Модель обязана иметь пустой конструктор, а всю инициализацию выполнять в `init()`;  
-Порядок удаления моделей контролируется `deleteOrder()`: чем меньше число, тем раньше удаляется модель (поддерживаются отрицательные значения).
+Communication between plugins is implemented via models (`PluginCore::IModel`) and their registry `ModelsStorage`.
+A model must have a default constructor and perform all initialization in `init()`.
 
-Для регистрации/получения модели можно использовать макрос:
+Model destruction order is controlled by `deleteOrder()`: the smaller the value, the earlier the model is destroyed (negative values are supported).
+
+To register/get a model you can use the macro:
 
 ```cpp
 RegisterModel(model_name, new_model, T)
 ```
 
-Он вернёт уже существующую модель, если она зарегистрирована, иначе зарегистрирует переданную.
+It returns an existing model if it is already registered; otherwise it registers the provided one.
+Minimal host (MyApp)
 
-# Минимальный хост (MyApp)
-
-Хост-приложение обычно просто создаёт `PluginCore::Core`:
+A host application typically just creates `PluginCore::Core`:
 ```cpp
 #include <PluginCore/Core.hpp>
 
 #include <csignal>
 #include <cerrno>
 #include <cstring>
-#include <unistd.h>  
+#include <unistd.h>
 
 static volatile sig_atomic_t g_stop = 0;
 
@@ -75,26 +83,28 @@ int main(int argc, char* argv[]) {
     sa.sa_flags = SA_RESTART;
     sigaction(SIGINT, &sa, nullptr);
     sigaction(SIGTERM, &sa, nullptr);
+
     d3156::PluginCore::Core core(argc, argv);
-    while (!g_stop) pause(); 
+
+    while (!g_stop) pause();
     return 0;
 }
 ```
+All “real logic” lives in plugins: they can start their own threads and/or async tasks inside `registerModels()/postInit()`.
 
-Вся логика “живёт” в плагинах: они могут запускать свои потоки и/или асинхронные задачи внутри `registerModels()/postInit()`.
-Можно использовать иной способ реализации основного потока. Это пример, который мне по больше душе. 
-Если хочется ипсользовать асинхронную логику, можно не создавать отдельный поток и запускать, например boost::io_context в post_init модели.
-Тогда приложение после загрузки плагинов тоже не завершиться, но обработку сигналов остановки придётся делать внутри этой модели. 
-Я считаю, что основной поток должен оставаться за Ядром и при запросе корректного завершения от системы через сигнал, передавать команду плагинам, 
-а те в свою очередь уже могут в своих потоках использовать асинхронные модели разных библиотек, могут просто крутить свой event loop, главное корректно передать сигнал о завершении работы.
+You can implement the main thread differently—this is just an example.
+If you want fully async logic, you can avoid creating a separate thread and run (for example) `boost::io_context` in a model’s `postInit()`.
+In that case the application will not exit after loading plugins, but shutdown signal handling will need to be implemented inside that model.
 
-# Пример хоста в PluginLoader
+The idea is that the main thread should belong to the Core. When the OS requests a graceful shutdown via a signal, the Core should propagate a shutdown command to plugins.
+Plugins can then use any async model in their own threads (different libraries, their own event loops, etc.) as long as the shutdown signal is handled correctly.
+# PluginLoader host example
 
-Пример реализации `./PluginLoader`
+Example implementation: `./PluginLoader`
 
-# Сборка PluginCore
+# Building PluginCore
 
-PluginCore собирается как статическая библиотека `PluginCore` (CMake, C++20).
+PluginCore is built as a static library PluginCore (CMake, C++20).
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -102,18 +112,18 @@ cmake --build build
 cpack --config build/CPackConfig.cmake -G DEB
 ```
 
-## Как написать плагин (пошагово)
+# Writing a plugin (step-by-step)
+Use the script `./tools/gen_plugin.py` or
 
-Испольуй скрипт ./tools/gen_plugin.py 
+1. Create a shared library libMyPlugin.so (or libMyPlugin.Debug.so for DEBUG).
 
-или
+2. Implement a class derived from PluginCore::IPlugin and at minimum registerModels(ModelsStorage&).
 
-1) Создай shared-библиотеку `libMyPlugin.so` (или `libMyPlugin.Debug.so` при `DEBUG`).[1]
-2) Реализуй класс-наследник `PluginCore::IPlugin` и минимум `registerModels(ModelsStorage&)`.[1]
-3) Экспортируй `create_plugin()` и `destroy_plugin()` с C ABI.[1]
-4) Положи `.so` в `./Plugins` или укажи `PLUGINS_DIR`.[1]
+3. Export create_plugin() and destroy_plugin() with C ABI.
 
-Минимальный каркас:
+4. Put the .so into ./Plugins or set PLUGINS_DIR.
+
+Minimal skeleton:
 
 ```cpp
 // MyPlugin.cpp
@@ -123,7 +133,7 @@ cpack --config build/CPackConfig.cmake -G DEB
 class MyPlugin final : public PluginCore::IPlugin {
 public:
     void registerModels(PluginCore::ModelsStorage& models) override {
-        // Регистрируй свои модели или получай чужие:
+        // Register your models or obtain existing ones:
         // auto* m = models.getModel<SomeModel>("SomeModel");
         // models.registerModel(new MyModel());
     }
@@ -136,3 +146,5 @@ extern "C" PluginCore::IPlugin* create_plugin() {
 extern "C" void destroy_plugin(PluginCore::IPlugin* p) {
     delete p;
 }
+
+```
