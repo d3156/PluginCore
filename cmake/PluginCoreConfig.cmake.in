@@ -1,2 +1,2 @@
-find_package(PluginCore CONFIG REQUIRED)
-target_link_libraries(app PRIVATE d3156::PluginCore)
+@PACKAGE_INIT@
+include("${CMAKE_CURRENT_LIST_DIR}/PluginCoreTargets.cmake")

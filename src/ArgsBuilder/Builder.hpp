@@ -32,13 +32,10 @@ namespace d3156
                 std::string long_name   = "";
                 std::string description = "";
                 static const char *type_to_string(TYPE t);
-                AbstractOption(TYPE t, char s, std::string l, std::string d)
-                    : type(t), short_name(s), long_name(l), description(d)
-                {
-                }
-                bool isParsed() { return parsed_; }
+                AbstractOption(TYPE t, char s, std::string l, std::string d);
+                bool isParsed();
                 virtual bool parse(const char *) = 0;
-                virtual ~AbstractOption() {};
+                virtual ~AbstractOption();
             };
             template <class Type> class Param : public AbstractOption
             {
@@ -60,13 +57,9 @@ namespace d3156
             {
             public:
                 bool &value_;
-                Flag(bool &value, TYPE t, char s, std::string l, std::string d)
-                    : AbstractOption(t, s, l, d), value_(value)
-                {
-                    value_ = false;
-                }
-                virtual bool parse(const char *) override { return parsed_ = value_ = true; }
-                virtual ~Flag() {}
+                Flag(bool &value, TYPE t, char s, std::string l, std::string d);
+                virtual bool parse(const char *) override;
+                virtual ~Flag();
             };
 
         public:

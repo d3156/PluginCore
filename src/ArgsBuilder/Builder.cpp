@@ -10,7 +10,7 @@ namespace d3156
 
     void error(string err)
     {
-        cout << "[Args] " << err << endl;
+        cout << "\033[31m[Args]\033[0m " << err << endl;
         exit(-1);
     }
 
@@ -127,4 +127,23 @@ namespace d3156
         if (param->long_name != "") params_long_[param->long_name] = param;
         return *this;
     }
+
+    Args::Builder::Flag::Flag(bool &value, TYPE t, char s, std::string l, std::string d)
+        : AbstractOption(t, s, l, d), value_(value)
+    {
+        value_ = false;
+    }
+
+    bool Args::Builder::Flag::parse(const char *) { return parsed_ = value_ = true; }
+
+    Args::Builder::Flag::~Flag() {}
+
+    Args::Builder::AbstractOption::AbstractOption(TYPE t, char s, std::string l, std::string d)
+        : type(t), short_name(s), long_name(l), description(d)
+    {
+    }
+
+    bool Args::Builder::AbstractOption::isParsed() { return parsed_; }
+
+    Args::Builder::AbstractOption::~AbstractOption() {};
 }

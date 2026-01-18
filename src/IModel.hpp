@@ -2,6 +2,7 @@
 #include "Structs.hpp"
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 namespace d3156
 {
     namespace PluginCore
