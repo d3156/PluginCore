@@ -1,30 +1,32 @@
 #pragma once
 #include "./ArgsBuilder/Builder.hpp"
 #include "IModel.hpp"
-
-namespace PluginCore
+namespace d3156
 {
-    class Core;
-
-    class IPlugin
+    namespace PluginCore
     {
-    public:
-        virtual ~IPlugin() {}
+        class Core;
 
-        virtual void registerModels(ModelsStorage &storage) = 0;
+        class IPlugin
+        {
+        public:
+            virtual ~IPlugin() {}
 
-        /// \brief registerArgs Зарегистрировать аргументы командной строки
-        /// \param bldr Анализатор командной строки
-        /// \note Вызывается до registerModels !!!
-        virtual void registerArgs(Args::Builder &bldr) {}
+            virtual void registerModels(ModelsStorage &storage) = 0;
 
-        /// \brief postInit Дополнительная инициализация плагина, если требуется
-        /// \note Вызывается после postInit всех моделей
-        virtual void postInit() {}
-    };
-    // C ABI точки входа (имена должны совпасть с dlsym/GetProcAddress)
-    extern "C" {
-    IPlugin *create_plugin();
-    void destroy_plugin(IPlugin *);
+            /// \brief registerArgs Зарегистрировать аргументы командной строки
+            /// \param bldr Анализатор командной строки
+            /// \note Вызывается до registerModels !!!
+            virtual void registerArgs(Args::Builder &bldr) {}
+
+            /// \brief postInit Дополнительная инициализация плагина, если требуется
+            /// \note Вызывается после postInit всех моделей
+            virtual void postInit() {}
+        };
+        // C ABI точки входа (имена должны совпасть с dlsym/GetProcAddress)
+        extern "C" {
+        IPlugin *create_plugin();
+        void destroy_plugin(IPlugin *);
+        }
     }
 }
