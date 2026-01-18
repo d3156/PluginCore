@@ -84,4 +84,4 @@ echo "    Plugins:       ${WS}/Plugins"
 echo "    PluginsSource: ${WS}/PluginsSource"
 echo "    tools:         ${WS}/tools"
 
-rm d3156-plugincore*
+rm ${WS}/d3156-plugincore*
