@@ -1,2 +1,5 @@
 build
 .cache
+release
+_CPack_Packages
+*.deb
