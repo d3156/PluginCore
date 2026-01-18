@@ -105,14 +105,25 @@ namespace d3156
             }
         }
 
-        Core::~Core() { libs_.clear(); }
+        Core::~Core()
+        {
+            /// Сначала удаляем плагины, чтобы они на обратились к несущетсвующей модели
+            for (auto& i :  libs_) {
+                if (i.second->plugin && i.second->destroy) i.second->destroy(i.second->plugin);
+                i.second->plugin = nullptr;
+            }
+            /// Затем удаляются модели
+            models_.clear();
+            libs_.clear(); /// И только потом выгружаем символы.
+        }
 
         template <class Fn> Fn sym(void *h_, const char *name)
         {
             dlerror();
             void *p = dlsym(h_, name);
             if (const char *e = dlerror()) {
-                std::cout << R_CORE << "Cannot load symbol of plugin loader: dlsym failed: " << name << ": " << e << "\n";
+                std::cout << R_CORE << "Cannot load symbol of plugin loader: dlsym failed: " << name << ": " << e
+                          << "\n";
                 return nullptr;
             }
             return reinterpret_cast<Fn>(p);
@@ -120,7 +131,6 @@ namespace d3156
 
         IPluginLoaderLib::~IPluginLoaderLib()
         {
-            if (plugin && destroy) destroy(plugin);
             if (h_) dlclose(h_);
         }
 
