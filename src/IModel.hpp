@@ -1,5 +1,5 @@
 #pragma once
-#include "structs.hpp"
+#include "Structs.hpp"
 #include <iostream>
 #include <vector>
 
