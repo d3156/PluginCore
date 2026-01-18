@@ -6,9 +6,11 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+
 def ask(prompt: str, default: str | None = None) -> str:
     s = input(f"{prompt}" + (f" [{default}]" if default else "") + ": ").strip()
     return s or (default or "")
+
 
 def ask_bool(prompt: str, default: bool = False) -> bool:
     d = "y" if default else "n"
@@ -17,73 +19,122 @@ def ask_bool(prompt: str, default: bool = False) -> bool:
         return default
     return s in ("y", "yes", "1", "true")
 
+
 def cpp_ident(s: str) -> str:
     s = re.sub(r"[^a-zA-Z0-9_]", "_", s)
     if re.match(r"^[0-9]", s):
         s = "_" + s
     return s
 
-@dataclass
-class Opt:
-    name: str
-    cls: str
-    out_dir: Path
-    with_model: bool
-    model_cls: str
 
 def write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
 
-def cmake(o: Opt) -> str:
+
+@dataclass
+class Opt:
+    plugin_name: str
+    plugin_cls: str
+    workspace_dir: Path
+    with_model: bool
+    model_name: str
+    model_cls: str
+
+
+def detect_workspace_dir(start: Path) -> Path | None:
+    p = start.resolve()
+    for _ in range(6):
+        if (p / "Plugins").is_dir() and (p / "PluginsSource").is_dir() and (p / "tools").is_dir():
+            return p
+        if p.parent == p:
+            break
+        p = p.parent
+    return None
+
+
+def plugin_cmake(o: Opt) -> str:
+    plugin = o.plugin_name
+    plugins_out = "${CMAKE_CURRENT_SOURCE_DIR}/../../Plugins"
+
+    model_block = ""
+    if o.with_model:
+        # Plugin project: PluginsSource/<PluginName>
+        # Model project:  PluginsSource/<ModelName>   (sibling directory)
+        model_src = "${CMAKE_CURRENT_SOURCE_DIR}/../" + o.model_name
+        model_bin = "${CMAKE_CURRENT_BINARY_DIR}/_deps/" + o.model_name
+
+        # Must specify binary_dir when adding out-of-tree / sibling source dir. [web:469]
+        model_block = f"""
+add_subdirectory("{model_src}" "{model_bin}")
+target_link_libraries({plugin} PRIVATE {o.model_name})
+"""
+
     return f"""cmake_minimum_required(VERSION 3.16)
-project({o.name} LANGUAGES CXX)
+project({plugin} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library({o.name} SHARED
-    src/{o.name}.cpp
+add_library({plugin} SHARED
+  src/{plugin}.cpp
 )
 
-target_include_directories({o.name}
-    PRIVATE
-        ${{CMAKE_CURRENT_SOURCE_DIR}}/include
+target_include_directories({plugin}
+  PRIVATE
+    ${{CMAKE_CURRENT_SOURCE_DIR}}/include
 )
 
-# Linux: produce lib{o.name}.so by default
-set_target_properties({o.name} PROPERTIES OUTPUT_NAME "{o.name}")
+# Put resulting .so into workspace/Plugins
+set_target_properties({plugin} PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "{plugins_out}"
+  RUNTIME_OUTPUT_DIRECTORY "{plugins_out}"
+  OUTPUT_NAME "{plugin}"
+)
+{model_block}
 """
+
+
+def model_cmake(o: Opt) -> str:
+    # Model target name == model project name (simple & predictable)
+    # Plugin will link to this target via target_link_libraries(... PRIVATE <ModelName>) [web:168]
+    return f"""cmake_minimum_required(VERSION 3.16)
+project({o.model_name} LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library({o.model_name} STATIC
+  src/{o.model_cls}.cpp
+)
+
+target_include_directories({o.model_name}
+  PUBLIC
+    ${{CMAKE_CURRENT_SOURCE_DIR}}/include
+)
+"""
+
 
 def plugin_cpp(o: Opt) -> str:
-    model_include = f'#include "{o.model_cls}.hpp"\n' if o.with_model else ""
-    model_stub = ""
-    if o.with_model:
-        model_stub = f"""
-class {o.model_cls} final : public d3156::PluginCore::IModel {{
-public:
-    d3156::PluginCore::model_name name() override {{ return "{o.model_cls}"; }}
-    void init() override {{
-        // TODO: init storage/resources here (ctor must be empty by convention)
-    }}
-}};
-"""
+    model_include = f'#include <{o.model_cls}.hpp>\n' if o.with_model else ""
+    register_model = f"        models.registerModel(new {o.model_cls}());" if o.with_model else "        // TODO: models.registerModel(new YourModel());"
+
     return f"""#include <PluginCore/IPlugin.hpp>
 #include <PluginCore/IModel.hpp>
-{model_include}
 
-class {o.cls} final : public d3156::PluginCore::IPlugin {{
+{model_include}
+class {o.plugin_cls} final : public d3156::PluginCore::IPlugin {{
 public:
     void registerArgs(d3156::Args::Builder& bldr) override {{
         // TODO: bldr.addOption(...) / bldr.addParam(...) / bldr.addFlag(...)
+        (void)bldr;
     }}
 
     void registerModels(d3156::PluginCore::ModelsStorage& models) override {{
-        // Provide model(s)
-{"        models.registerModel(new " + o.model_cls + "());" if o.with_model else "        // TODO: models.registerModel(new YourModel());"}
-        // Or consume model(s)
-        // auto* other = models.getModel<OtherModel>(\"OtherModel\");
+{register_model}
+        (void)models;
     }}
 
     void postInit() override {{
@@ -91,17 +142,16 @@ public:
     }}
 }};
 
-{model_stub}
-
 // ABI required by d3156::PluginCore::Core (dlsym uses exact names)
 extern "C" d3156::PluginCore::IPlugin* create_plugin() {{
-    return new {o.cls}();
+    return new {o.plugin_cls}();
 }}
 
 extern "C" void destroy_plugin(d3156::PluginCore::IPlugin* p) {{
     delete p;
 }}
 """
+
 
 def model_hpp(o: Opt) -> str:
     return f"""#pragma once
@@ -122,26 +172,79 @@ public:
 }};
 """
 
+
+def model_cpp(o: Opt) -> str:
+    return f"""#include "{o.model_cls}.hpp"
+
+// Implementation can stay in the header for now.
+// Keep this file for future expansion.
+"""
+
+
+def build_sh(o: Opt) -> str:
+    return """#!/usr/bin/env bash
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BUILD_DIR="${ROOT}/build"
+
+cmake -S "${ROOT}" -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE=Release
+cmake --build "${BUILD_DIR}" --config Release
+
+echo
+echo "[OK] Build finished."
+echo "Plugin .so should be in: ${ROOT}/../../Plugins"
+"""
+
+
 def main():
-    print("PluginCore plugin generator\n")
+    print("PluginCore plugin generator (workspace mode)\n")
 
-    name = cpp_ident(ask("Имя плагина (будет lib<Name>.so)", "MyPlugin"))
-    cls  = cpp_ident(ask("Имя C++ класса плагина", f"{name}Plugin"))
+    ws = detect_workspace_dir(Path.cwd())
+    if ws is None:
+        print("ERROR: workspace not found.")
+        print("Run this script from the workspace directory (where Plugins/ PluginsSource/ tools/ exist).")
+        raise SystemExit(1)
 
-    out_dir = Path(ask("Куда генерировать (директория)", "./plugins")).expanduser()
+    plugin_name = cpp_ident(ask("Plugin project name (will produce lib<Name>.so)", "MyPlugin"))
+    plugin_cls = cpp_ident(ask("C++ plugin class name", f"{plugin_name}Plugin"))
 
-    with_model = ask_bool("Создать модель-заглушку (IModel)?", False)
-    model_cls = cpp_ident(ask("Имя модели (C++ класс)", f"{name}Model")) if with_model else ""
+    with_model = ask_bool("Generate a separate model project (STATIC lib) and link it into the plugin?", True)
 
-    o = Opt(name=name, cls=cls, out_dir=out_dir, with_model=with_model, model_cls=model_cls)
-
-    root = out_dir / name
-    write(root / "CMakeLists.txt", cmake(o))
-    write(root / "src" / f"{name}.cpp", plugin_cpp(o))
+    model_name = ""
+    model_cls = ""
     if with_model:
-        write(root / "include" / f"{model_cls}.hpp", model_hpp(o))
+        model_name = cpp_ident(ask("Model project name (folder under PluginsSource/)", f"{plugin_name}Model"))
+        model_cls = cpp_ident(ask("Model C++ class name", model_name))
 
-    print(f"\nOK: {root}")
+    o = Opt(
+        plugin_name=plugin_name,
+        plugin_cls=plugin_cls,
+        workspace_dir=ws,
+        with_model=with_model,
+        model_name=model_name,
+        model_cls=model_cls,
+    )
+
+    plugin_root = ws / "PluginsSource" / plugin_name
+    write(plugin_root / "CMakeLists.txt", plugin_cmake(o))
+    write(plugin_root / "src" / f"{plugin_name}.cpp", plugin_cpp(o))
+    write(plugin_root / "build.sh", build_sh(o))
+    (plugin_root / "build.sh").chmod(0o755)
+
+    if with_model:
+        model_root = ws / "PluginsSource" / model_name
+        write(model_root / "CMakeLists.txt", model_cmake(o))
+        write(model_root / "include" / f"{model_cls}.hpp", model_hpp(o))
+        write(model_root / "src" / f"{model_cls}.cpp", model_cpp(o))
+
+    print(f"\nOK: generated plugin project: {plugin_root}")
+    if with_model:
+        print(f"OK: generated model project:  {ws / 'PluginsSource' / model_name}")
+    print("\nBuild:")
+    print(f"  cd {plugin_root}")
+    print("  ./build.sh")
+    print(f"\nResulting .so will be placed into: {ws / 'Plugins'}")
+
 
 if __name__ == "__main__":
     main()
