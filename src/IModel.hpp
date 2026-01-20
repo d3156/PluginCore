@@ -1,4 +1,5 @@
 #pragma once
+#include "ArgsBuilder/Builder.hpp"
 #include "Structs.hpp"
 #include <iostream>
 #include <vector>
@@ -20,13 +21,17 @@ namespace d3156
             /// \return Значение приоритета. Чем меньше число - тем раньше будет удалена модель
             /// (отрицательные числа поддерживаются)
             virtual int deleteOrder() { return 0; }
-
-        public:
+        
             // Создание всех объектов модели необходимо выполнять в методе init. Конструктор должен быть пустым.
             virtual void init() = 0;
 
             /// \brief postInit Вызывается после всех шагов инициализации плагинов
             virtual void postInit() {}
+
+            /// \brief registerArgs Зарегистрировать аргументы командной строки
+            /// \param bldr Анализатор командной строки
+            /// \note Значения аргументов распарсятся до postInit
+            virtual void registerArgs(Args::Builder &bldr) {}
         };
 
 #define RegisterModel(model_name, new_model, T)                                                                        \
