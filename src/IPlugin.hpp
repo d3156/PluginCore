@@ -16,7 +16,7 @@ namespace d3156
 
             /// \brief registerArgs Зарегистрировать аргументы командной строки
             /// \param bldr Анализатор командной строки
-            /// \note Вызывается до registerModels !!!
+            /// \note Значения аргументов распарсятся до postInit
             virtual void registerArgs(Args::Builder &bldr) {}
 
             /// \brief postInit Дополнительная инициализация плагина, если требуется
