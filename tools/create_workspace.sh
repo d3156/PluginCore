@@ -85,3 +85,15 @@ echo "    PluginsSource: ${WS}/PluginsSource"
 echo "    tools:         ${WS}/tools"
 
 rm ${WS}/d3156-plugincore*
+
+printf "Download plugins, models and libs? y|n "
+read -r answer
+
+case "$answer" in
+    [Yy]*)
+        sh ./updateDepsList.sh
+        ;;
+    *)
+        echo "Skipped"
+        ;;
+esac
