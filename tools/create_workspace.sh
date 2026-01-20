@@ -88,7 +88,7 @@ rm ${WS}/d3156-plugincore*
 
 printf "Download plugins, models and libs? y|n "
 read -r answer
-
+cd ${WS}
 case "$answer" in
     [Yy]*)
         sh ./tools/updateDepsList.sh
