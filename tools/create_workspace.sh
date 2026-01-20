@@ -107,6 +107,7 @@ case "$answer" in
         mkdir core
         cd core
         git clone git@github.com:d3156/PluginCore.git
+        git clone git@github.com:d3156/PluginCore_SourcesList.git
         ;;
     *)
         echo "Skipped"
