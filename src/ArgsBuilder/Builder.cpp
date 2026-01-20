@@ -3,6 +3,12 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+
+#include <chrono>
+#include <ctime>
+#include <sstream>
+#include <sys/utsname.h>
+#include <unistd.h>
 namespace d3156
 {
     using Args::Builder;
@@ -93,6 +99,7 @@ namespace d3156
                 error("Parameter must be specified -" + string(1, i->short_name) + " or --" + i->long_name);
         return *this;
     }
+
     Builder::~Builder()
     {
         for (auto i : all_) delete i;
@@ -146,4 +153,57 @@ namespace d3156
     bool Args::Builder::AbstractOption::isParsed() { return parsed_; }
 
     Args::Builder::AbstractOption::~AbstractOption() {};
+    class SystemInfo
+    {
+    public:
+        static std::string getCurrentTime()
+        {
+            auto now       = std::chrono::system_clock::now();
+            auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+            std::stringstream ss;
+            ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
+            return ss.str();
+        }
+
+        static std::string getOSInfo()
+        {
+            struct utsname unameData;
+            if (uname(&unameData) == 0)
+                return std::string(unameData.sysname) + " " + unameData.nodename + " " + unameData.domainname + " " +
+                       unameData.release + " " + unameData.version + " (" + unameData.machine + ") ";
+            return "Unix-like OS";
+        }
+
+        static std::string getHostname()
+        {
+            char buffer[256];
+            if (gethostname(buffer, sizeof(buffer)) == 0) { return std::string(buffer); }
+            return "Unknown";
+        }
+    };
+    
+    void Args::printHeader(int argc, char *argv[])
+    {
+        const int width = 60;
+        std::cout << std::string(width, '=') << std::endl;
+        std::cout << "d3156::PluginCore - Plugin Loader System" << std::endl;
+        std::cout << std::string(width, '-') << std::endl;
+        std::cout << "Version     : " << PLUGIN_CORE_VERSION << std::endl;
+        std::cout << "Start Time  : " << SystemInfo::getCurrentTime() << std::endl;
+        std::cout << "Hostname    : " << SystemInfo::getHostname() << std::endl;
+        std::cout << "OS          : " << SystemInfo::getOSInfo() << std::endl;
+        if (argc > 0) {
+            std::cout << "Executable  : " << argv[0] << std::endl;
+            if (argc > 1) {
+                std::cout << "Arguments   : ";
+                for (int i = 1; i < argc; ++i) {
+                    std::cout << argv[i];
+                    if (i < argc - 1) std::cout << " ";
+                }
+                std::cout << std::endl;
+            }
+        }
+        std::cout << std::string(width, '=') << std::endl << std::endl;
+    }
 }
