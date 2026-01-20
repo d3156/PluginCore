@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(PluginCore
-  VERSION 1.0.1
+  VERSION 1.0.2
   LANGUAGES CXX
 )
 
@@ -98,3 +98,4 @@ set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "d3156-plugincore (= ${PROJECT_VERSION})")
 set(CPACK_COMPONENT_DEV_DEPENDS runtime)
 
 include(CPack)
+set_target_properties(PluginCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
