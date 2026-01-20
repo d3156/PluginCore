@@ -91,7 +91,7 @@ read -r answer
 
 case "$answer" in
     [Yy]*)
-        sh ./updateDepsList.sh
+        sh ./tools/updateDepsList.sh
         ;;
     *)
         echo "Skipped"
