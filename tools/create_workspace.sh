@@ -97,3 +97,18 @@ case "$answer" in
         echo "Skipped"
         ;;
 esac
+
+
+printf "Need clone PluginCore repo? y|n "
+read -r answer
+cd ${WS}
+case "$answer" in
+    [Yy]*)
+        mkdir core
+        cd core
+        git clone git@github.com:d3156/PluginCore.git
+        ;;
+    *)
+        echo "Skipped"
+        ;;
+esac
