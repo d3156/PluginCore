@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <iostream>
 #include <regex>
+#include <unistd.h>
+#include <sys/utsname.h>
 
 namespace fs = std::filesystem;
 namespace d3156
@@ -28,13 +30,17 @@ namespace d3156
 
         Core::Core(int argc, char *argv[])
         {
+            Args::printHeader(argc, argv);
             Args::Builder bldr;
+            bldr.setVersion("d3156::PluginCore " + std::string(PLUGIN_CORE_VERSION));
             loadPlugins();
             for (auto &lib : libs_) lib.second->plugin->registerArgs(bldr);
-            bldr.parse(argc, argv);
             for (auto &lib : libs_) lib.second->plugin->registerModels(models_);
+            for (auto i : models_) i.second->registerArgs(bldr);
+            bldr.parse(argc, argv);
             for (auto i : models_) i.second->postInit();
             for (auto &lib : libs_) lib.second->plugin->postInit();
+            if (libs_.empty()) exit(0);
         }
 
         static std::vector<fs::path> getPaths()
@@ -67,10 +73,7 @@ namespace d3156
         void Core::loadPlugins()
         {
             std::vector<fs::path> pluginsDir = getPaths();
-            if (pluginsDir.empty()) {
-                std::cout << R_CORE << "Empty existing path list for loading plugin!\n";
-                exit(-1);
-            }
+            if (pluginsDir.empty()) std::cout << R_CORE << "Empty existing path list for loading plugin!\n";
 #ifdef DEBUG
             const std::regex re(R"(^lib([^\.]*)\.Debug\.so$)");
 #else
@@ -109,7 +112,7 @@ namespace d3156
         {
             std::cout << G_CORE << "Destory CORE\n";
             /// Сначала удаляем плагины, чтобы они на обратились к несущетсвующей модели
-            for (auto& i :  libs_) {
+            for (auto &i : libs_) {
                 std::cout << G_CORE << "Destroy plugin " << i.first << " \n";
                 if (i.second->plugin && i.second->destroy) i.second->destroy(i.second->plugin);
                 i.second->plugin = nullptr;

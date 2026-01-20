@@ -19,6 +19,9 @@ namespace d3156
 
     namespace Args
     {
+
+        void printHeader(int argc, char *argv[]);
+
         class Builder
         {
             class AbstractOption
