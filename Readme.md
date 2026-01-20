@@ -58,7 +58,7 @@ RegisterModel(model_name, new_model, T)
 ```
 
 It returns an existing model if it is already registered; otherwise it registers the provided one.
-Minimal host (MyApp)
+## Minimal host (MyApp)
 
 A host application typically just creates `PluginCore::Core`:
 ```cpp
