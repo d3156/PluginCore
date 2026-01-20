@@ -21,4 +21,4 @@ rm -rf ./build
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 
-mv ./build/PluginLoader ./../release/
+mv ./build/PluginLoader* ./../release/
