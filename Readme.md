@@ -4,6 +4,20 @@
 
 PluginCore is a C++ library for building a fully plugin-based application: the host creates `PluginCore::Core`, and functionality is provided by dynamic libraries from the plugins directory.
 
+## Easy start
+### 1) Create a workspace
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/d3156/PluginCore/main/tools/create_workspace.sh)
+```
+Answer the script prompts (workspace name, etc.). Process substitution <( ... ) lets bash execute the downloaded script without saving it as a file. 
+
+### 2) Generate a new plugin
+Go to the created workspace directory and run:
+```bash
+python3 ./tools/gen_plugin.py
+```
+Answer the prompts about the plugin and model(s), then start developing.
+
 ## How it works
 
 When `PluginCore::Core(argc, argv)` is created, the core:
@@ -111,21 +125,6 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 cpack --config build/CPackConfig.cmake -G DEB
 ```
-
-## Easy start
-### 1) Create a workspace
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/d3156/PluginCore/main/tools/create_workspace.sh)
-```
-Answer the script prompts (workspace name, etc.). Process substitution <( ... ) lets bash execute the downloaded script without saving it as a file. 
-
-### 2) Generate a new plugin
-Go to the created workspace directory and run:
-```bash
-python3 ./tools/gen_plugin.py
-```
-Answer the prompts about the plugin and model(s), then start developing.
-
 
 # Writing a plugin (step-by-step)
 Use the script `./tools/gen_plugin.py` or
