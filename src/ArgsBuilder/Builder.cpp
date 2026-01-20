@@ -110,7 +110,7 @@ namespace d3156
 
     Args::Builder &Args::Builder::setVersion(std::string version)
     {
-        version_ = version;
+        version_ += "\n" + version;
         return *this;
     }
 
