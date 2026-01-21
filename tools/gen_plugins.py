@@ -78,8 +78,8 @@ if(NOT EXISTS "{model_src}/CMakeLists.txt")
     )
     FetchContent_MakeAvailable({model_src})
 else()
-    add_subdirectory("${{CMAKE_CURRENT_SOURCE_DIR}}/../{model_src}" 
-                     "${{CMAKE_BINARY_DIR}}/_deps/{model_src}")
+    add_subdirectory("{model_src}" 
+                     "${{CMAKE_BINARY_DIR}}/_deps/{o.model_name}")
 endif()
 
 target_link_libraries({plugin} PRIVATE {o.model_name})
