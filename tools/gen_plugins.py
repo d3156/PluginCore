@@ -66,20 +66,43 @@ def plugin_cmake(o: Opt) -> str:
 
         # Must specify binary_dir when adding out-of-tree / sibling source dir. [web:469]
         model_block = f"""
-add_subdirectory("{model_src}" "{model_bin}")
+
+if(NOT EXISTS "${{CMAKE_CURRENT_SOURCE_DIR}}/../{model_src}/CMakeLists.txt")
+    message(STATUS "{model_src} not found, downloading...")
+    
+    include(FetchContent)
+    FetchContent_Declare(
+        {model_src}
+        GIT_REPOSITORY https://github.com/d3156/{model_src}.git
+        GIT_TAG master
+    )
+    FetchContent_MakeAvailable({model_src})
+else()
+    add_subdirectory("${{CMAKE_CURRENT_SOURCE_DIR}}/../{model_src}" 
+                     "${{CMAKE_BINARY_DIR}}/_deps/{model_src}")
+endif()
+
 target_link_libraries({plugin} PRIVATE {o.model_name})
 """
 
     return f"""cmake_minimum_required(VERSION 3.16)
-project({plugin} LANGUAGES CXX)
-
+project({plugin}
+  VERSION 1.0.0
+  LANGUAGES CXX
+)
+add_compile_definitions({plugin}_VERSION="${{PROJECT_VERSION}}" )
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library({plugin} SHARED
-  src/{plugin}.cpp
+file(GLOB_RECURSE SRC_FILES
+  CONFIGURE_DEPENDS
+  ${{CMAKE_CURRENT_SOURCE_DIR}}/src/*.cpp
+  ${{CMAKE_CURRENT_SOURCE_DIR}}/src/*.hpp
+  ${{CMAKE_CURRENT_SOURCE_DIR}}/src/*.h
 )
+
+add_library({plugin} SHARED ${{SRC_FILES}})
 
 target_include_directories({plugin}
   PRIVATE
@@ -92,6 +115,9 @@ set_target_properties({plugin} PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "{plugins_out}"
   OUTPUT_NAME "{plugin}"
 )
+find_package(PluginCore REQUIRED)
+target_link_libraries({plugin} PRIVATE d3156::PluginCore)
+
 {model_block}
 """
 
@@ -100,15 +126,25 @@ def model_cmake(o: Opt) -> str:
     # Model target name == model project name (simple & predictable)
     # Plugin will link to this target via target_link_libraries(... PRIVATE <ModelName>) [web:168]
     return f"""cmake_minimum_required(VERSION 3.16)
-project({o.model_name} LANGUAGES CXX)
+project({o.model_name} 
+  VERSION 1.0.0
+  LANGUAGES CXX
+)
+
+add_compile_definitions({o.model_name}_VERSION="${{PROJECT_VERSION}}" )
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library({o.model_name} STATIC
-  src/{o.model_cls}.cpp
+file(GLOB_RECURSE SRC_FILES
+  CONFIGURE_DEPENDS
+  ${{CMAKE_CURRENT_SOURCE_DIR}}/src/*.cpp
+  ${{CMAKE_CURRENT_SOURCE_DIR}}/include/*.hpp
+  ${{CMAKE_CURRENT_SOURCE_DIR}}/include/*.h
 )
+
+add_library({o.model_name} STATIC  ${{SRC_FILES}})
 
 target_include_directories({o.model_name}
   PUBLIC
@@ -229,6 +265,7 @@ def main():
     write(plugin_root / "CMakeLists.txt", plugin_cmake(o))
     write(plugin_root / "src" / f"{plugin_name}.cpp", plugin_cpp(o))
     write(plugin_root / "build.sh", build_sh(o))
+    write(plugin_root / ".gitignore", "build\n.cache\nrelease\n_CPack_Packages\n*.deb\n*/build")
     (plugin_root / "build.sh").chmod(0o755)
 
     if with_model:
