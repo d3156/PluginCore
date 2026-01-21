@@ -67,7 +67,7 @@ def plugin_cmake(o: Opt) -> str:
         # Must specify binary_dir when adding out-of-tree / sibling source dir. [web:469]
         model_block = f"""
 
-if(NOT EXISTS "${{CMAKE_CURRENT_SOURCE_DIR}}/../{model_src}/CMakeLists.txt")
+if(NOT EXISTS "{model_src}/CMakeLists.txt")
     message(STATUS "{model_src} not found, downloading...")
     
     include(FetchContent)
