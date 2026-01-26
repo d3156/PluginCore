@@ -8,7 +8,7 @@ PluginCore — C++ библиотека для создания приложен
 ### 1) Создать рабочее окружение (workspace)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/d3156/PluginCore/main/tools/create_workspace.sh)
+sh <(curl -fsSL https://raw.githubusercontent.com/d3156/PluginCore/main/tools/create_workspace.sh)
 ```
 Ответьте на вопросы скрипта (имя workspace и т. д.). Подстановка процесса <( ... ) позволяет bash выполнить скачанный скрипт без сохранения его в файл.
 ### 2) Сгенерировать новый плагин
