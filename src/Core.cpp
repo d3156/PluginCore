@@ -1,7 +1,6 @@
 #include "Core.hpp"
 #include <dlfcn.h>
 #include <filesystem>
-#include <iostream>
 #include <regex>
 #include <unistd.h>
 #include <sys/utsname.h>
