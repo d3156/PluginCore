@@ -1,4 +1,5 @@
 #include "Builder.hpp"
+#include "Logger/Log.hpp"
 #include <cstddef>
 #include <iomanip>
 #include <iostream>
@@ -13,10 +14,12 @@ namespace d3156
 {
     using Args::Builder;
     using namespace std;
+    #undef LOG_NAME
+    #define LOG_NAME "Args"
 
     void error(string err)
     {
-        cout << "\033[31m[Args]\033[0m " << err << endl;
+        R_LOG(0, err);
         exit(-1);
     }
 
