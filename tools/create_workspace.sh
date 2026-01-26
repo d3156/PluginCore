@@ -9,7 +9,7 @@ DEFAULT_NAME="PluginWorkspace"
 read -r -p "Workspace name [${DEFAULT_NAME}]: " WS_NAME
 WS_NAME="${WS_NAME:-$DEFAULT_NAME}"
 WS="${PWD}/${WS_NAME}"
-echo "\033[32m[0/8]\033[0m Using workspace: ${WS}"
+printf "\033[32m[0/8]\033[0m Using workspace: ${WS}"
 
 mkdir -p "${WS}/Plugins" "${WS}/PluginsSource" "${WS}/core"  "${WS}/configs"
 cd ${WS}
@@ -49,28 +49,28 @@ download_asset() {
 }
 
 # --- PluginLoader_X.Y.Z (бинарник) ---
-echo "\033[32m[2/8]\033[0m Download PluginLoader"
+printf "\033[32m[2/8]\033[0m Download PluginLoader"
 download_asset '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$'
 PLUGINLOADER_NAME="$(get_name_by_regex '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$')"
 chmod +x "${WS}/${PLUGINLOADER_NAME}"
-echo "\033[32m[3/8]\033[0m Download sources"
+printf "\033[32m[3/8]\033[0m Download sources"
 sh ./tools/updateDepsList.sh
 
 # --- deb пакеты ---
-echo "\033[32m[4/8]\033[0m Download d3156-plugincore.deb"
+printf "\033[32m[4/8]\033[0m Download d3156-plugincore.deb"
 download_asset '^d3156-plugincore_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$'
-echo "\033[32m[5/8]\033[0m Download d3156-plugincore-dev.deb"
+printf "\033[32m[5/8]\033[0m Download d3156-plugincore-dev.deb"
 download_asset '^d3156-plugincore-dev_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$'
 
 RUNTIME_DEB="${WS}/$(get_name_by_regex '^d3156-plugincore_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$')"
 DEV_DEB="${WS}/$(get_name_by_regex '^d3156-plugincore-dev_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$')"
 
-echo "\033[32m[6/8]\033[0m Installing runtime package: ${RUNTIME_DEB}"
+printf "\033[32m[6/8]\033[0m Installing runtime package: ${RUNTIME_DEB}"
 sudo dpkg -i "${RUNTIME_DEB}"
-echo "\033[32m[7/8]\033[0m Installing dev package: ${DEV_DEB}"
+printf "\033[32m[7/8]\033[0m Installing dev package: ${DEV_DEB}"
 sudo dpkg -i "${DEV_DEB}"
 rm -f "${WS}"/d3156-plugincore*.deb
 # --- deb пакеты ---
-echo "\033[32m[8/8]\033[0m  Workspace succes created"
-echo "\033[32m[OK]\033[0m  Workspace ready at ${WS}"
+printf "\033[32m[8/8]\033[0m  Workspace succes created"
+printf "\033[32m[OK]\033[0m  Workspace ready at ${WS}"
 tree -L 2 ${WS}
