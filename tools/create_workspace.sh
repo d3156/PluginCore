@@ -84,7 +84,7 @@ echo "    Plugins:       ${WS}/Plugins"
 echo "    PluginsSource: ${WS}/PluginsSource"
 echo "    tools:         ${WS}/tools"
 
-rm ${WS}/d3156-plugincore*
+rm -f "${WS}"/d3156-plugincore*.deb
 
 printf "Download plugins, models and libs? y|n "
 read -r answer
@@ -106,8 +106,8 @@ case "$answer" in
     [Yy]*)
         mkdir core
         cd core
-        git clone git@github.com:d3156/PluginCore.git
-        git clone git@github.com:d3156/PluginCore_SourcesList.git
+        git clone https://github.com/d3156/PluginCore.git
+        git clone https://github.com/d3156/PluginCore_SourcesList.git
         ;;
     *)
         echo "Skipped"
