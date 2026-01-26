@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 cd PluginsSource
-rm list
+rm -f list
 wget -q https://raw.githubusercontent.com/d3156/PluginCore_SourcesList/main/list
 
 while IFS= read -r repo; do
