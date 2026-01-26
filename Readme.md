@@ -7,7 +7,7 @@ PluginCore is a C++ library for building a fully plugin-based application: the h
 ## Easy start
 ### 1) Create a workspace
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/d3156/PluginCore/main/tools/create_workspace.sh)
+sh <(curl -fsSL https://raw.githubusercontent.com/d3156/PluginCore/main/tools/create_workspace.sh)
 ```
 Answer the script prompts (workspace name, etc.). Process substitution <( ... ) lets bash execute the downloaded script without saving it as a file. 
 
