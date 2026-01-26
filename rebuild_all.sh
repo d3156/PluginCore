@@ -1,6 +1,5 @@
 
 rm -rf ./build
-rm -rf ./build
 rm -rf _CPack_Packages
 rm -rf release
 rm d3156*

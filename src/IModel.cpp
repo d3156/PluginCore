@@ -17,8 +17,7 @@ namespace d3156
             for (int ord : orders)
                 for (auto i = begin(); i != end();)
                     if (i->second->deleteOrder() == ord) {
-                        std::cout << G_CORE << "[DestroyOrder " << ord << "] Destroy " << i->second->name().c_str()
-                                  << "\n";
+                        G_LOG(0, "[DestroyOrder " << ord << "] Destroy " << i->second->name().c_str());
                         delete i->second;
                         this->erase(i++);
                     } else

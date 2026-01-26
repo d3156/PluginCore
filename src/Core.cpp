@@ -1,6 +1,5 @@
 #include "Core.hpp"
 #include <dlfcn.h>
-#include "Structs.hpp"
 #include <filesystem>
 #include <iostream>
 #include <regex>
@@ -43,10 +42,12 @@ namespace d3156
             if (libs_.empty()) exit(0);
         }
 
+        const std::string client_plugins_path = "./Plugins";
+
         static std::vector<fs::path> getPaths()
         {
             if (std::getenv("PLUGINS_DIR") == nullptr) {
-                std::cout << G_CORE << "Using standart pluging path " << client_plugins_path << "\n";
+                G_LOG(0, "Using standart pluging path " << client_plugins_path);
                 if (fs::exists(client_plugins_path) && fs::is_directory(client_plugins_path))
                     return {fs::path(client_plugins_path)};
                 return {};
@@ -61,9 +62,9 @@ namespace d3156
                 if (!token.empty()) {
                     if (fs::exists(token)) {
                         out.emplace_back(token);
-                        std::cout << G_CORE << "Directory of plugins " << token << " added\n";
+                        G_LOG(0, "Directory of plugins " << token << " added");
                     } else
-                        std::cout << Y_CORE << "Directory from PLUGINS_DIR not found: " << token << "\n";
+                        Y_LOG(0, "Directory from PLUGINS_DIR not found: " << token);
                 }
                 start = end + 1;
             }
@@ -73,14 +74,14 @@ namespace d3156
         void Core::loadPlugins()
         {
             std::vector<fs::path> pluginsDir = getPaths();
-            if (pluginsDir.empty()) std::cout << R_CORE << "Empty existing path list for loading plugin!\n";
+            if (pluginsDir.empty()) R_LOG(0, "Empty existing path list for loading plugin!");
 #ifdef DEBUG
             const std::regex re(R"(^lib([^\.]*)\.Debug\.so$)");
 #else
             const std::regex re(R"(^lib([^\.]*)\.so$)");
 #endif
             for (const auto &pluginDir : pluginsDir) {
-                std::cout << G_CORE << "Loading plugins from dir " << pluginDir << "\n";
+                G_LOG(0, "Loading plugins from dir " << pluginDir);
                 for (const auto &de :
                      fs::recursive_directory_iterator(pluginDir, fs::directory_options::skip_permission_denied)) {
                     if (!de.is_regular_file()) continue;
@@ -96,11 +97,10 @@ namespace d3156
                     auto lib = IPluginLoaderLib::load(absName);
 
                     if (lib == nullptr) continue;
-
-                    std::cout << G_CORE << "Plugin " << name << " loaded\n";
+                    G_LOG(0, "Plugin " << name << " loaded");
                     if (libs_.contains(name)) {
-                        std::cout << Y_CORE << "Plugin with name " << name << " already loaded!\n";
-                        std::cout << Y_CORE << "Plugin with path " << absName << " will be skiped!\n";
+                        Y_LOG(0, "Plugin with name " << name << " already loaded!");
+                        Y_LOG(0, "Plugin with path " << absName << " will be skiped!");
                         continue;
                     }
                     libs_[name] = std::move(lib);
@@ -110,17 +110,15 @@ namespace d3156
 
         Core::~Core()
         {
-            std::cout << G_CORE << "Destory CORE\n";
-            /// Сначала удаляем плагины, чтобы они на обратились к несущетсвующей модели
-            for (auto &i : libs_) {
-                std::cout << G_CORE << "Destroy plugin " << i.first << " \n";
+            G_LOG(0, "Destory CORE");
+            for (auto &i : libs_) { /// Сначала удаляем плагины, чтобы они на обратились к несущетсвующей модели
+                G_LOG(0, "Destroy plugin " << i.first);
                 if (i.second->plugin && i.second->destroy) i.second->destroy(i.second->plugin);
                 i.second->plugin = nullptr;
             }
-            /// Затем удаляются модели
-            models_.reset();
-            libs_.clear(); /// И только потом выгружаем символы.
-            std::cout << G_CORE << "CORE destroyed\n";
+            models_.reset(); /// Затем удаляются модели
+            libs_.clear();   /// И только потом выгружаем символы.
+            G_LOG(0, "CORE destroyed");
         }
 
         template <class Fn> Fn sym(void *h_, const char *name)
@@ -128,8 +126,7 @@ namespace d3156
             dlerror();
             void *p = dlsym(h_, name);
             if (const char *e = dlerror()) {
-                std::cout << R_CORE << "Cannot load symbol of plugin loader: dlsym failed: " << name << ": " << e
-                          << "\n";
+                R_LOG(0, "Cannot load symbol of plugin loader: dlsym failed: " << name << ": " << e);
                 return nullptr;
             }
             return reinterpret_cast<Fn>(p);
@@ -144,7 +141,7 @@ namespace d3156
         {
             auto h_ = dlopen(path.c_str(), RTLD_NOW);
             if (!h_) {
-                std::cout << R_CORE << "Cannot load plugin: dlopen failed: " << path << ": " << dlerror() << "\n";
+                R_LOG(0, "Cannot load plugin: dlopen failed: " << path << ": " << dlerror());
                 return nullptr;
             }
             Create create   = sym<IPlugin *(*)()>(h_, "create_plugin");
@@ -155,7 +152,7 @@ namespace d3156
             }
             IPlugin *plugin = create();
             if (!plugin) {
-                std::cout << R_CORE << "Plugin " << path << " not loaded\n";
+                R_LOG(0, "Plugin " << path << " not loaded");
                 dlclose(h_);
                 return nullptr;
             }
