@@ -1,6 +1,6 @@
 #pragma once
 #include "ArgsBuilder/Builder.hpp"
-#include "Structs.hpp"
+#include "Logger/Log.hpp"
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -8,7 +8,7 @@ namespace d3156
 {
     namespace PluginCore
     {
-
+        typedef std::string model_name;
         class IModel
         {
         public:
@@ -49,13 +49,14 @@ namespace d3156
                 auto it = find(model->name());
                 if (it != end()) {
                     delete model;
-                    std::cout << Y_CORE << "Model already registred :" << model->name().c_str() << "\n";
+                    
+                    Y_LOG(0, "Model already registred :" << model->name().c_str() << "\n");
                     return static_cast<ConcreteModel *>(it->second);
                 } else {
                     model->init();
                     insert({model->name(), model});
                     regSeq_.push_back(model);
-                    std::cout << G_CORE << "Model registred success [Delete order " << model->deleteOrder() << "] " << model->name().c_str() << "\n";
+                    G_LOG(0, "Model registred success [Delete order " << model->deleteOrder() << "] " << model->name().c_str() << "\n");
                     return model;
                 }
             }

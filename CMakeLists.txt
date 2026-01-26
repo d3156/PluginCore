@@ -5,6 +5,8 @@ project(PluginCore
   LANGUAGES CXX
 )
 
+
+add_compile_definitions(LOG_NAME="Core" )
 add_compile_definitions( PLUGIN_CORE_VERSION="${PROJECT_VERSION}" )
 
 set(CMAKE_CXX_STANDARD 20)
