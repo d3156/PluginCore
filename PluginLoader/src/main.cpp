@@ -12,8 +12,7 @@ static void on_term(int /*signum*/) {
 }
 
 int main(int argc, char* argv[]) {
-    struct sigaction sa;
-    std::memset(&sa, 0, sizeof(sa));
+    struct sigaction sa = {};
     sa.sa_handler = on_term;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;

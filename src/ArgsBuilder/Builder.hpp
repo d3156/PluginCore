@@ -3,11 +3,11 @@
 #include <sstream>
 #include <string>
 #include <vector>
-namespace d3156
-{
-    template <typename T> bool from_string(const char *str, T &val)
-    {
-        std::string data(str);
+
+namespace d3156 {
+    template<typename T>
+    bool from_string(const char *str, T &val) {
+        const std::string data(str);
         if (data.empty()) return false;
         std::istringstream iss(data);
         if (data.find("0x") != std::string::npos)
@@ -17,93 +17,110 @@ namespace d3156
         return !iss.fail();
     }
 
-    namespace Args
-    {
-
+    namespace Args {
         void printHeader(int argc, char *argv[]);
 
-        class Builder
-        {
-            class AbstractOption
-            {
+        class Builder {
+            class AbstractOption {
             protected:
                 bool parsed_ = false;
 
             public:
                 enum TYPE { OPTION, PARAM, FLAG } type;
-                char short_name         = 0;
-                std::string long_name   = "";
-                std::string description = "";
+
+                char short_name = 0;
+                std::string long_name;
+                std::string description;
+
                 static const char *type_to_string(TYPE t);
+
                 AbstractOption(TYPE t, char s, std::string l, std::string d);
-                bool isParsed();
+
+                bool isParsed() const;
+
                 virtual bool parse(const char *) = 0;
-                virtual ~AbstractOption();
+
+                virtual ~AbstractOption() = default;
             };
-            template <class Type> class Param : public AbstractOption
-            {
+
+            template<class Type>
+            class Param : public AbstractOption {
             public:
                 Type &value_;
-                Param(Type &value, TYPE t, char s, std::string l, std::string d)
-                    : AbstractOption(t, s, l, d), value_(value)
-                {
+
+                Param(Type &value, const TYPE t, const char s, const std::string &l, const std::string &d)
+                    : AbstractOption(t, s, l, d), value_(value) {
                 }
-                virtual bool parse(const char *str) override
-                {
-                    bool ok = from_string(str, value_);
+
+                bool parse(const char *str) override {
+                    const bool ok = from_string(str, value_);
                     parsed_ = true;
                     return ok;
                 }
-                virtual ~Param() {}
+
+                ~Param() override = default;
             };
-            class Flag : public AbstractOption
-            {
+
+            class Flag : public AbstractOption {
             public:
                 bool &value_;
-                Flag(bool &value, TYPE t, char s, std::string l, std::string d);
-                virtual bool parse(const char *) override;
-                virtual ~Flag();
+
+                Flag(bool &value, TYPE t, char s, const std::string &l, const std::string &d);
+
+                bool parse(const char *) override;
+
+                ~Flag() override = default;
             };
 
         public:
             ~Builder();
+
             Builder &parse(int argc, char *argv[]);
-            template <class Type>
-            Builder &addOption(Type &value, char short_name, std::string long_name = "", std::string description = "")
-            {
+
+            template<class Type>
+            Builder &addOption(Type &value, char short_name, std::string long_name = "", std::string description = "") {
                 return addParam(new Param<Type>(value, AbstractOption::OPTION, short_name, long_name, description));
             }
-            template <class Type>
-            Builder &addParam(Type &value, char short_name, std::string long_name = "", std::string description = "")
-            {
+
+            template<class Type>
+            Builder &addParam(Type &value, char short_name, std::string long_name = "", std::string description = "") {
                 return addParam(new Param<Type>(value, AbstractOption::PARAM, short_name, long_name, description));
             }
-            template <class Type>
-            Builder &addOption(Type &value, std::string long_name = "", std::string description = "")
-            {
+
+            template<class Type>
+            Builder &addOption(Type &value, std::string long_name = "", std::string description = "") {
                 return addParam(new Param<Type>(value, AbstractOption::OPTION, '\0', long_name, description));
             }
-            template <class Type>
-            Builder &addParam(Type &value, std::string long_name = "", std::string description = "")
-            {
+
+            template<class Type>
+            Builder &addParam(Type &value, std::string long_name = "", std::string description = "") {
                 return addParam(new Param<Type>(value, AbstractOption::PARAM, '\0', long_name, description));
             }
-            Builder &addFlag(bool &flag, char short_name, std::string long_name = "", std::string description = "");
-            Builder &addFlag(bool &flag, std::string long_name = "", std::string description = "");
-            Builder &setVersion(std::string version);
-            Builder &setCompanyText(std::string compamy);
+
+            Builder &addFlag(bool &flag, char short_name, const std::string &long_name = "",
+                             const std::string &description = "");
+
+            Builder &addFlag(bool &flag, const std::string &long_name = "", const std::string &description = "");
+
+            Builder &setVersion(const std::string &version);
+
+            Builder &setCompanyText(const std::string &company);
 
         private:
-            void process(AbstractOption *param, const char *str);
-            void version();
-            void help();
+            static void process(AbstractOption *param, const char *str);
+
+            void version() const;
+
+            void help() const;
+
             Builder &addParam(AbstractOption *param);
+
             std::map<std::string, AbstractOption *> params_long_;
             std::map<char, AbstractOption *> params_short_;
             std::vector<AbstractOption *> all_;
-            std::string version_  = "";
-            std::string app_path_ = "";
-            std::string compamy_text_;
+            std::string version_;
+            std::string app_path_;
+            std::string company_text_;
         };
     } // namespace Args
 }
