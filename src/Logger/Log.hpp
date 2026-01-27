@@ -61,7 +61,7 @@ namespace d3156
     enum class LogType : uint8_t { WHITE, RED, GREEN, YELLOW };
     namespace LoggerManager
     {
-        void log(LogType type, int level, const char *file, int line, const char *source, std::string &&stream) noexcept;
+        void log(LogType type, int level, const char *file, int line, const char *source, std::string &&message) noexcept;
         bool allowed(LogType type, int level) noexcept;
     };
 
