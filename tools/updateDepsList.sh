@@ -5,6 +5,7 @@ wget -q https://raw.githubusercontent.com/d3156/PluginCore_SourcesList/main/list
 
 while IFS= read -r repo; do
     dir=$(basename "$repo" .git)
+    echo "Check project $dir from $repo"
     if [ -d "$dir" ]; then
         cd "$dir" && git pull && cd ..
     else
