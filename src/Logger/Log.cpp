@@ -11,13 +11,16 @@
 #include <string>
 #include <unordered_map>
 
-namespace d3156 {
-    bool getBoolEnv(const char *env, const bool def) {
+namespace d3156
+{
+    bool getBoolEnv(const char *env, const bool def)
+    {
         if (const char *val = getenv(env)) return std::strncmp(val, "true", 5) == 0;
         return def;
     }
 
-    u_int16_t getFromEnv(const char *env, const u_int16_t def) {
+    u_int16_t getFromEnv(const char *env, const u_int16_t def)
+    {
         if (const char *val = getenv(env)) {
             try {
                 return static_cast<u_int16_t>(std::stoul(val));
@@ -29,21 +32,23 @@ namespace d3156 {
 
     enum class OutType { CONSOLE, FILE };
 
-    OutType getOutType() {
+    OutType getOutType()
+    {
         const char *val = getenv("OUT");
         return (val && std::strncmp(val, "FILE", 5) == 0) ? OutType::FILE : OutType::CONSOLE;
     }
 
-    static std::string FORMAT = getenv("FORMAT") ? getenv("FORMAT") : "|{date:%H:%M:%S}|{source}|{file}|{message}";
-    static OutType OUT = getOutType();
+    static std::string FORMAT  = getenv("FORMAT") ? getenv("FORMAT") : "|{date:%H:%M:%S}|{source}| {message}";
+    static OutType OUT         = getOutType();
     static std::string OUT_DIR = getenv("OUT_DIR") ? getenv("OUT_DIR") : "./logs";
     static std::atomic<bool> PER_SOURCE_FILES = getBoolEnv("PER_SOURCE_FILES", false);
-    static std::atomic<u_int16_t> R_LEVEL = getFromEnv("R_LEVEL", 1);
-    static std::atomic<u_int16_t> Y_LEVEL = getFromEnv("Y_LEVEL", 1);
-    static std::atomic<u_int16_t> G_LEVEL = getFromEnv("G_LEVEL", 1);
-    static std::atomic<u_int16_t> W_LEVEL = getFromEnv("W_LEVEL", 1);
+    static std::atomic<u_int16_t> R_LEVEL     = getFromEnv("R_LEVEL", 1);
+    static std::atomic<u_int16_t> Y_LEVEL     = getFromEnv("Y_LEVEL", 1);
+    static std::atomic<u_int16_t> G_LEVEL     = getFromEnv("G_LEVEL", 1);
+    static std::atomic<u_int16_t> W_LEVEL     = getFromEnv("W_LEVEL", 1);
 
-    bool LoggerManager::allowed(const LogType type, const int level) noexcept {
+    bool LoggerManager::allowed(const LogType type, const int level) noexcept
+    {
         switch (type) {
             case LogType::RED: return level <= R_LEVEL;
             case LogType::YELLOW: return level <= Y_LEVEL;
@@ -53,10 +58,25 @@ namespace d3156 {
         return false;
     }
 
-    namespace {
-        class LoggerImpl {
+    namespace
+    {
+        class LoggerImpl
+        {
         public:
-            LoggerImpl() {
+            LoggerImpl()
+            {
+                constexpr int width = 120;
+                std::cout << "Logger settings from porcess Environment" << std::endl;
+                std::cout << std::string(width, '-') << std::endl;
+                std::cout << "FORMAT           : " << FORMAT << " # allow {source}, {file}, {line}, {message}, {date:format strftime}, {level}" << std::endl;
+                std::cout << "OUT              : " << (OUT == OutType::FILE ? "FILE" : "CONSOLE") << std::endl;
+                std::cout << "OUT_DIR          : " << OUT_DIR << std::endl;
+                std::cout << "PER_SOURCE_FILES : " << PER_SOURCE_FILES << std::endl;
+                std::cout << "R_LEVEL          : " << R_LEVEL << std::endl;
+                std::cout << "Y_LEVEL          : " << Y_LEVEL << std::endl;
+                std::cout << "G_LEVEL          : " << G_LEVEL << std::endl;
+                std::cout << "W_LEVEL          : " << W_LEVEL << std::endl;
+                std::cout << std::string(width, '=') << std::endl;
                 if (OUT == OutType::FILE && !PER_SOURCE_FILES) {
                     std::filesystem::create_directories(OUT_DIR);
                     common_file_.open(OUT_DIR + "/common.log", std::ios::app);
@@ -64,7 +84,8 @@ namespace d3156 {
             }
 
             void log(LogType type, int level, const char *file, int line, const char *source,
-                     const std::string &message) noexcept {
+                     const std::string &message) noexcept
+            {
                 try {
                     std::ostringstream oss;
                     std::string formatted = FORMAT;
@@ -87,14 +108,10 @@ namespace d3156 {
                     if (OUT == OutType::CONSOLE) {
                         std::string color;
                         switch (type) {
-                            case LogType::RED: color = "\033[31m";
-                                break;
-                            case LogType::YELLOW: color = "\033[33m";
-                                break;
-                            case LogType::GREEN: color = "\033[32m";
-                                break;
-                            case LogType::WHITE: color = "\033[0m";
-                                break;
+                            case LogType::RED: color = "\033[31m"; break;
+                            case LogType::YELLOW: color = "\033[33m"; break;
+                            case LogType::GREEN: color = "\033[32m"; break;
+                            case LogType::WHITE: color = "\033[0m"; break;
                         }
                         replace_all(formatted, "{source}", color + source + "\033[0m");
                     } else
@@ -103,6 +120,7 @@ namespace d3156 {
                     replace_all(formatted, "{file}", file);
                     replace_all(formatted, "{line}", std::to_string(line));
                     replace_all(formatted, "{message}", message);
+                    replace_all(formatted, "{level}", std::to_string(level));
 
                     // --- output ---
                     if (OUT == OutType::CONSOLE) {
@@ -118,18 +136,20 @@ namespace d3156 {
             }
 
         private:
-            std::ofstream *getFileStream(const char *source) {
+            std::ofstream *getFileStream(const char *source)
+            {
                 if (!PER_SOURCE_FILES) return &common_file_;
                 std::lock_guard<std::mutex> lock(file_mutex_);
                 auto it = file_streams_.find(source);
                 if (it != file_streams_.end()) return &it->second;
-                auto &ofs = file_streams_[source];
+                auto &ofs        = file_streams_[source];
                 std::string path = OUT_DIR + "/" + source + ".log";
                 ofs.open(path, std::ios::app);
                 return &ofs;
             }
 
-            static void replace_all(std::string &str, const std::string &from, const std::string &to) {
+            static void replace_all(std::string &str, const std::string &from, const std::string &to)
+            {
                 size_t start = 0;
                 while ((start = str.find(from, start)) != std::string::npos) {
                     str.replace(start, from.length(), to);
@@ -144,7 +164,8 @@ namespace d3156 {
     }
 
     void LoggerManager::log(const LogType type, const int level, const char *file, const int line, const char *source,
-                            std::string &&message) noexcept {
+                            std::string &&message) noexcept
+    {
         static LoggerImpl impl;
         impl.log(type, level, file, line, source, message);
     }
