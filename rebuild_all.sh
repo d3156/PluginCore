@@ -21,3 +21,4 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 
 mv ./build/PluginLoader* ./../release/
+cp ./../release/PluginLoader* ./../../../PluginLoader
