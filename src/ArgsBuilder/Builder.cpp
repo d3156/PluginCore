@@ -167,14 +167,14 @@ namespace d3156 {
     };
 
     void Args::printHeader(const int argc, char *argv[]) {
-        constexpr int width = 60;
+        constexpr int width = 120;
         std::cout << std::string(width, '=') << std::endl;
         std::cout << "d3156::PluginCore - Plugin Loader System" << std::endl;
         std::cout << std::string(width, '-') << std::endl;
         std::cout << "Version     : " << PLUGIN_CORE_VERSION << std::endl;
         std::cout << "Start Time  : " << SystemInfo::getCurrentTime() << std::endl;
         std::cout << "Hostname    : " << SystemInfo::getHostname() << std::endl;
-        std::cout << "OS          : " << SystemInfo::getOSInfo() << std::endl;
+        std::cout << "OS          : " << SystemInfo::getOSInfo() << std::endl;        
         if (argc > 0) {
             std::cout << "Executable  : " << argv[0] << std::endl;
             if (argc > 1) {
@@ -186,6 +186,6 @@ namespace d3156 {
                 std::cout << std::endl;
             }
         }
-        std::cout << std::string(width, '=') << std::endl << std::endl;
+        std::cout << std::string(width, '=') << std::endl;
     }
 }
