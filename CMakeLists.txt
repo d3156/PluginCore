@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(PluginCore
-  VERSION 1.0.3
+  VERSION 1.1.0
   LANGUAGES CXX
 )
 
@@ -20,8 +20,9 @@ file(GLOB_RECURSE SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 
-add_library(PluginCore STATIC ${SRC_FILES})
+add_library(PluginCore SHARED ${SRC_FILES})
 add_library(d3156::PluginCore ALIAS PluginCore)
+set_target_properties(PluginCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(PluginCore
   PUBLIC
@@ -31,40 +32,36 @@ target_include_directories(PluginCore
 
 target_compile_definitions(PluginCore PRIVATE $<$<COMPILE_LANGUAGE:CXX>:LOG_NAME="Core">)
 
-# -------------------------
-# Install (components)
-# -------------------------
-install(TARGETS PluginCore
+# DEB packet
+
+set(PLUGINCORE_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/PluginCore)
+# --- install library (.so) ---
+install(
+  TARGETS PluginCore
   EXPORT PluginCoreTargets
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   COMPONENT runtime
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/PluginCore
 )
 
-# dev: заголовки
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/
+# --- install headers ---
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/PluginCore
   COMPONENT dev
-  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
 )
 
-# dev: экспорт таргетов
-install(EXPORT PluginCoreTargets
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/PluginCore
+install(
+  EXPORT PluginCoreTargets
   NAMESPACE d3156::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/PluginCore
   COMPONENT dev
 )
 
-# -------------------------
-# Package config (dev)
-# -------------------------
 include(CMakePackageConfigHelpers)
 
-set(PLUGINCORE_CONFIG_INSTALL_DIR
-  ${CMAKE_INSTALL_LIBDIR}/cmake/PluginCore
-)
-
-# Нужен файл-шаблон cmake/PluginCoreConfig.cmake.in
 configure_package_config_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PluginCoreConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/PluginCoreConfig.cmake
@@ -84,22 +81,98 @@ install(FILES
   COMPONENT dev
 )
 
-# -------------------------
-# CPack (DEB, 2 packages)
-# -------------------------
-set(CPACK_GENERATOR "DEB")
-set(CPACK_DEB_COMPONENT_INSTALL ON)
+
+set(CPACK_GENERATOR DEB)
+set(CPACK_PACKAGE_NAME "d3156-plugincore")
+set(CPACK_PACKAGE_VENDOR "d3156")
+set(CPACK_PACKAGE_CONTACT "Smirnov Yaroslav (d3156)")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
 
-set(CPACK_PACKAGE_VENDOR "d3156")
-set(CPACK_PACKAGE_CONTACT "d3156 <you@example.com>")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
-
+# --- components ---
+set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_COMPONENTS_ALL runtime dev)
+
+# --- runtime package ---
 set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "d3156-plugincore")
-set(CPACK_DEBIAN_DEV_PACKAGE_NAME     "d3156-plugincore-dev")
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_SECTION "libs")
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS "libstdc++6")
+
+# --- dev package ---
+set(CPACK_DEBIAN_DEV_PACKAGE_NAME "d3156-plugincore-dev")
+set(CPACK_DEBIAN_DEV_PACKAGE_SECTION "libdevel")
 set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "d3156-plugincore (= ${PROJECT_VERSION})")
-set(CPACK_COMPONENT_DEV_DEPENDS runtime)
 
 include(CPack)
-set_target_properties(PluginCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# # -------------------------
+# # Install (components)
+# # -------------------------
+# install(TARGETS PluginCore
+#   EXPORT PluginCoreTargets
+#   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   COMPONENT runtime
+#   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/PluginCore
+# )
+
+# # dev: заголовки
+# install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/
+#   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/PluginCore
+#   COMPONENT dev
+#   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+# )
+
+# # dev: экспорт таргетов
+# install(EXPORT PluginCoreTargets
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/PluginCore
+#   NAMESPACE d3156::
+#   COMPONENT dev
+# )
+
+# # -------------------------
+# # Package config (dev)
+# # -------------------------
+# include(CMakePackageConfigHelpers)
+
+# set(PLUGINCORE_CONFIG_INSTALL_DIR
+#   ${CMAKE_INSTALL_LIBDIR}/cmake/PluginCore
+# )
+
+# # Нужен файл-шаблон cmake/PluginCoreConfig.cmake.in
+# configure_package_config_file(
+#   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PluginCoreConfig.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/PluginCoreConfig.cmake
+#   INSTALL_DESTINATION ${PLUGINCORE_CONFIG_INSTALL_DIR}
+# )
+
+# write_basic_package_version_file(
+#   ${CMAKE_CURRENT_BINARY_DIR}/PluginCoreConfigVersion.cmake
+#   VERSION ${PROJECT_VERSION}
+#   COMPATIBILITY SameMajorVersion
+# )
+
+# install(FILES
+#   ${CMAKE_CURRENT_BINARY_DIR}/PluginCoreConfig.cmake
+#   ${CMAKE_CURRENT_BINARY_DIR}/PluginCoreConfigVersion.cmake
+#   DESTINATION ${PLUGINCORE_CONFIG_INSTALL_DIR}
+#   COMPONENT dev
+# )
+
+# # -------------------------
+# # CPack (DEB, 2 packages)
+# # -------------------------
+# set(CPACK_GENERATOR "DEB")
+# set(CPACK_DEB_COMPONENT_INSTALL ON)
+# set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+
+# set(CPACK_PACKAGE_VENDOR "d3156")
+# set(CPACK_PACKAGE_CONTACT "d3156 <you@example.com>")
+# set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
+
+# set(CPACK_COMPONENTS_ALL runtime dev)
+# set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "d3156-plugincore")
+# set(CPACK_DEBIAN_DEV_PACKAGE_NAME     "d3156-plugincore-dev")
+# set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS "d3156-plugincore (= ${PROJECT_VERSION})")
+# set(CPACK_COMPONENT_DEV_DEPENDS runtime)
+
+# include(CPack)
