@@ -7,21 +7,12 @@
 #define LOG_NAME "UNKNOWN_SOURCE"
 #endif
 
-/*FORMAT="|{date:%H:%M:%S}|{source}|{file}|{message}" # allow {source}, {file}, {message}, {date:format strftime}, {line}, {level}
-OUT=CONSOLE                                         # allow CONSOLE, FILE
-OUT_DIR=./logs/                                     # if OUT=FILE
-PER_SOURCE_FILES=true
-R_LEVEL=2
-Y_LEVEL=2
-G_LEVEL=2
-W_LEVEL=2*/
-
 #define LOG_IMPL(TYPE, LEVEL, STREAM)                                                                                  \
     do {                                                                                                               \
-        if (!d3156::LoggerManager::allowed(TYPE, LEVEL)) break;                                             \
+        if (!d3156::LoggerManager::allowed(TYPE, LEVEL)) break;                                                        \
         std::ostringstream oss;                                                                                        \
         oss << STREAM;                                                                                                 \
-        d3156::LoggerManager::log(TYPE, LEVEL, __FILE__, __LINE__, LOG_NAME, oss.str());                    \
+        d3156::LoggerManager::log(TYPE, LEVEL, __FILE__, __LINE__, LOG_NAME, oss.str());                               \
     } while (0)
 
 #ifdef NO_LOG
@@ -61,7 +52,8 @@ namespace d3156
     enum class LogType : uint8_t { WHITE, RED, GREEN, YELLOW };
     namespace LoggerManager
     {
-        void log(LogType type, int level, const char *file, int line, const char *source, std::string &&message) noexcept;
+        void log(LogType type, int level, const char *file, int line, const char *source,
+                 std::string &&message) noexcept;
         bool allowed(LogType type, int level) noexcept;
     };
 
