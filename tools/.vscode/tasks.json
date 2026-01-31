@@ -10,6 +10,33 @@
       },
       "group": "build",
       "problemMatcher": []
+    }, {
+      "label": "___internal___",
+      "type": "shell",
+      "command": "sh",
+      "args": ["${workspaceFolder}/tools/clangd_reconfigure.sh"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Reconfigure clangd",
+      "type": "shell",
+      "command": "code",
+      "args": ["--reuse-window", "--command", "clangd.restart"],
+      "dependsOn": ["___internal___"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

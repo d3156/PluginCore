@@ -1,6 +1,5 @@
 {
   "clangd.arguments": [
-    "--compile-commands-dir=./.compile_commands",
     "--background-index"
   ],
   "lldb.launch.sourceLanguages": ["cpp"]
