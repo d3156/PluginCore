@@ -74,3 +74,5 @@ rm -f "${WS}"/d3156-plugincore*.deb
 echo "\033[32m[8/8]\033[0m  Workspace succes created"
 echo "\033[32m[OK]\033[0m  Workspace ready at ${WS}"
 tree -L 2 ${WS}
+
+ln -s ${WS}/core/PluginCore/tools/.vscode  ${WS}/.vscode

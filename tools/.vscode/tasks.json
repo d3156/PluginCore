@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-all-debug",
+      "type": "shell",
+      "command": "./core/PluginCore/tools/build_all_debug.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}
