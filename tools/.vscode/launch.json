@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug PluginLoader (LLDB)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/PluginLoader",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "LD_LIBRARY_PATH": "${workspaceFolder}/libs:${workspaceFolder}/Plugins"
+      }
+    },
+    {
+      "name": "Attach LLDB",
+      "type": "lldb", 
+      "request": "attach",
+      "pid": "${command:pickMyProcess}"
+    }
+  ]
+}

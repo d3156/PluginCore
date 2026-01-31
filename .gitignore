@@ -1,4 +1,5 @@
 build
+build-debug
 .cache
 release
 _CPack_Packages

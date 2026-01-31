@@ -128,7 +128,7 @@ namespace d3156::PluginCore {
     }
 
     std::unique_ptr<IPluginLoaderLib> IPluginLoaderLib::load(const std::string &path) {
-        const auto h_ = dlopen(path.c_str(), RTLD_NOW);
+        const auto h_ = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
         if (!h_) {
             R_LOG(0, "Cannot load plugin: dlopen failed: " << path << ": " << dlerror());
             return nullptr;
