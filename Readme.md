@@ -18,6 +18,57 @@ python3 ./tools/gen_plugin.py
 ```
 Answer the prompts about the plugin and model(s), then start developing.
 
+## Workspce Environment
+The `tools` directory (under version control, you can periodically `git pull` it) contains utilities for working with the workspace.
+
+### Scripts:
+- `addEasyBuildCommands.sh` - Adds shorcat aliases in `.bashrc` for CMake builds:
+    - cmbr - configure and build the current directory as a `Release` project.
+    - cmbd - configure and build the current directory as a `Debug` project.
+    - cmbrc - clean, configure, and build the current directory as a `Release` project.
+    - cmbdc - clean, configure, and build the current directory as a `Debug` project.
+- `build_all_release.sh` - builds all projects in the workspace in `Release` mode.
+- `build_all_debug.sh` - builds all projects in the workspace in `Debug` mode.
+- `clean_build.sh` - remove all `build` and `build-debug` directories in workspace.
+- `clangd_reconfigure.sh` - generates the `compile_commands.json` file for the clangd language server.
+- `gen_plugins.py` - Generates a new plugin and model through an interactive questionnaire.
+- `updateDepsList.sh` - Clones all repositories required for this workspace if they are not already present; otherwise performs a `git pull`
+
+### Service files:
+- `.vscode/` -  a directory symlinked from the workspace root to use **Visual Studio Code** with this project.
+- `workspace.cmake` - the base CMake configuration used by all plugins, libraries, and models in this workspace.
+- `create_workspace.sh` -  creates a new workspace with a specified name. Run this script from the directory where you want the workspace to be located.
+Usage: Run all scripts (except create_workspace.sh) from the root of the workspace, for example:
+```bash
+sh ./tools/clean_build.sh
+```
+
+### For VS Code Developers:
+
+Recommended setup:
+
+```bash
+# Install Debian packages:
+sudo apt update
+sudo apt install git default-jre graphviz clang clangd lldb cmake build-essential
+# Install VS Code extensions via command line:
+code --install-extension llvm-vs-code-extensions.vscode-clangd
+code --install-extension vadimcn.vscode-lldb
+code --install-extension eamodio.gitlens
+code --install-extension go2sh.cmake-integration-vscode
+code --install-extension jebbs.plantuml
+code --install-extension josetr.cmake-language-support-vscode
+code --install-extension ms-vscode.cmake-tools
+code --install-extension twxs.cmake
+# Install manually (if needed):
+code --install-extension vscode-icons-team.vscode-icons
+```
+The `.vscode` directory (symlinked from `./tools`) contains pre-configured settings for project debugging.
+
+The workspace also includes predefined VS Code tasks. Use `Ctrl+Shift+P`, select **"Tasks: Run Task"**, and choose from the following:
+- `build-all-debug` - runs the `build_all_debug.sh` script.
+- `Reconfigure clangd` - runs `clangd_reconfigure.sh` and restarts the clangd server to apply the new `compile_commands.json` file.
+
 ## How it works
 
 When `PluginCore::Core(argc, argv)` is created, the core:
