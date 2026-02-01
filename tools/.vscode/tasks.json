@@ -4,7 +4,8 @@
     {
       "label": "build-all-debug",
       "type": "shell",
-      "command": "./core/PluginCore/tools/build_all_debug.sh",
+      "command": "sh",
+      "args": ["${workspaceFolder}/tools/build_all_debug.sh"],
       "options": {
         "cwd": "${workspaceFolder}"
       },

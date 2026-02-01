@@ -21,4 +21,5 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 
 mv ./build/PluginLoader* ./../release/
-cp ./../release/PluginLoader* ./../../../PluginLoader
+cp ./../release/PluginLoader* ./../../../
+ln -sf $(find ./../release/ -maxdepth 1 -name 'PluginLoader*' -type f -printf '%f\n' | head -1) ./../../../PluginLoader
