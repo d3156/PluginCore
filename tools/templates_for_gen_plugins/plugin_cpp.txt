@@ -1,0 +1,27 @@
+#include "{plugin_name}.hpp"
+
+void {plugin_name}::registerArgs(d3156::Args::Builder& bldr) {
+    bldr.setVersion("{plugin_name} " + std::string({plugin_name}_VERSION))
+        .addOption(configPath, "{plugin_name}Path", "path to config for {plugin_name}.json");
+}
+
+void {plugin_name}::registerModels(d3156::PluginCore::ModelsStorage& models) {
+// IF_WITH_MODEL:
+    auto model = RegisterModel("{model_name}", new {model_name}(), {model_name});    
+// END_IF:
+    // auto model = RegisterModel("Model", new Model(), Model);
+    (void)models;
+}
+
+void {plugin_name}::postInit() {
+    // TODO: start threads / async jobs here if needed
+}
+
+// ABI required by d3156::PluginCore::Core (dlsym uses exact names)
+extern "C" d3156::PluginCore::IPlugin* create_plugin() {
+    return new {plugin_name}();
+}
+
+extern "C" void destroy_plugin(d3156::PluginCore::IPlugin* p) {
+    delete p;
+}

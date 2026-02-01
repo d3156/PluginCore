@@ -1,0 +1,15 @@
+#include <PluginCore/IPlugin.hpp>
+#include <PluginCore/IModel.hpp>
+#include <string>
+
+// IF_WITH_MODEL:
+#include <{model_name}>
+// END_IF:
+
+class {plugin_name} final : public d3156::PluginCore::IPlugin {
+    std::string configPath;
+public:
+    void registerArgs(d3156::Args::Builder& bldr) override;
+    void registerModels(d3156::PluginCore::ModelsStorage& models) override;
+    void postInit() override;
+};
