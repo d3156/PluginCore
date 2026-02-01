@@ -19,6 +19,55 @@ python3 ./tools/gen_plugin.py
 ```
 Ответьте на вопросы скрипта о плагине и модели(ях), после чего можно начинать разработку.
 
+## Настройка рабочего окружения
+Папка `tools` (под котролем версий, можно приодически обновлять через `git pull`) содержит инструменты для работы с workspace-ом.
+
+### Скрипты
+- `addEasyBuildCommands.sh` - Добавляет в `.bashrc` короткие команды для удобства сборки через CMake:
+    - cmbr - собирает проект в `Release`.
+    - cmbd - собирает проект в `Debug`.
+    - cmbrc - собирает с очисткой проект в `Release`.
+    - cmbdc - собирает с очисткой проект в `Debug`.
+- `build_all_release.sh` - собирает все проекты из workspace в `Release`.
+- `build_all_debug.sh` - собирает все проекты из workspace в `Debug`.
+- `clean_build.sh` - удаляет все `build` и `build-debug` папки в workspace.
+- `clangd_reconfigure.sh` - создает `compile_commands.json` - файл для clangd language server.
+- `gen_plugins.py` - скрипт генерации новых плагинов и моделей. Проводит опрос и генерирует проект сам.
+- `updateDepsList.sh` - Стягивает все необходимые репозитории для workspace. Если они уже стянуты - выполняет `git pull`
+Все скрипты следуетзапусктать из корня workspace, например:
+```bash
+sh ./tools/clean_build.sh
+```
+### Сервисные файлы
+- `.vscode/` - эта папка лежит под котролем версий в ./core/PluginCire/tools и через символьную ссылку кладется в корень workspace для  **Visual Studio Code**.
+- `workspace.cmake` - базовый файл CMake для всех плагинов, библиотек и моделй в workspace.
+- `create_workspace.sh` - создает нове workspace с заданным именем. Скрипт следует запускать из той папки, в которой требуется развернуть workspace.
+
+### Для использования VS Code
+Рекомендуемый минимальный набор:
+
+```bash
+# Установить минимум эти пакеты
+sudo apt update
+sudo apt install git default-jre graphviz clang clangd lldb cmake build-essential
+# Установить в VS Code расширения
+code --install-extension llvm-vs-code-extensions.vscode-clangd
+code --install-extension vadimcn.vscode-lldb
+code --install-extension eamodio.gitlens
+code --install-extension go2sh.cmake-integration-vscode
+code --install-extension jebbs.plantuml
+code --install-extension josetr.cmake-language-support-vscode
+code --install-extension ms-vscode.cmake-tools
+code --install-extension twxs.cmake
+# Рекомендую для удобства установить набор иконок
+code --install-extension vscode-icons-team.vscode-icons
+```
+Папка `.vscode` содержит подготовленные настройки для отладки через lldb.
+Также в ней есть VS Code tasks. Для использования, нажмите комбинацию `Ctrl+Shift+P`, найдите  **"Tasks: Run Task"**, и выбирайте нужный таск:
+- `build-all-debug` - запустит скрипт `build_all_debug.sh`.
+- `Reconfigure clangd` - запустит скрипт `clangd_reconfigure.sh` и перезапустит clangd server для применеия нового `compile_commands.json` файла.
+Список скриптов будет обновляться по мере развития проекта.
+
 ## Как это работает
 
 При создании `PluginCore::Core(argc, argv)` ядро:
