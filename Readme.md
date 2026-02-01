@@ -50,7 +50,7 @@ Recommended setup:
 ```bash
 # Install Debian packages:
 sudo apt update
-sudo apt install git default-jre graphviz clang clangd lldb cmake build-essential
+sudo apt install git default-jre graphviz clang clangd lldb cmake build-essential dotnet-runtime-10.0
 # Install VS Code extensions via command line:
 code --install-extension llvm-vs-code-extensions.vscode-clangd
 code --install-extension vadimcn.vscode-lldb

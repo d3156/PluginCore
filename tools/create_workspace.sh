@@ -53,6 +53,7 @@ echo "\033[32m[2/8]\033[0m Download PluginLoader"
 download_asset '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$'
 PLUGINLOADER_NAME="$(get_name_by_regex '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$')"
 chmod +x "${WS}/${PLUGINLOADER_NAME}"
+ln -sf "${WS}/${PLUGINLOADER_NAME}" "${WS}/PluginLoader"
 echo "\033[32m[3/8]\033[0m Download sources"
 sh ./tools/updateDepsList.sh
 

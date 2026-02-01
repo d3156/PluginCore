@@ -49,7 +49,7 @@ sh ./tools/clean_build.sh
 ```bash
 # Установить минимум эти пакеты
 sudo apt update
-sudo apt install git default-jre graphviz clang clangd lldb cmake build-essential
+sudo apt install git default-jre graphviz clang clangd lldb cmake build-essential dotnet-runtime-10.0
 # Установить в VS Code расширения
 code --install-extension llvm-vs-code-extensions.vscode-clangd
 code --install-extension vadimcn.vscode-lldb
