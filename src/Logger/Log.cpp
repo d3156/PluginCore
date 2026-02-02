@@ -68,10 +68,15 @@ namespace d3156
                 constexpr int width = 80;
                 std::cout << "\033[1;32mLogger Settings from process Environment\033[0m" << std::endl;
                 std::cout << std::string(width, '-') << std::endl;
-                std::cout << "\033[34mFORMAT\033[0m           : " << FORMAT << "\033[32m # allow {source}, {file}, {line}, {message}, {date:format strftime}, {level}\033[0m" << std::endl;
-                std::cout << "\033[34mOUT\033[0m              : " << (OUT == OutType::FILE ? "FILE" : "CONSOLE") << " \033[32m# allow FILE and CONSOLE\033[0m" << std::endl;
+                std::cout
+                    << "\033[34mFORMAT\033[0m           : " << FORMAT
+                    << "\033[32m # allow {source}, {file}, {line}, {message}, {date:format strftime}, {level}\033[0m"
+                    << std::endl;
+                std::cout << "\033[34mOUT\033[0m              : " << (OUT == OutType::FILE ? "FILE" : "CONSOLE")
+                          << " \033[32m# allow FILE and CONSOLE\033[0m" << std::endl;
                 std::cout << "\033[34mOUT_DIR\033[0m          : " << OUT_DIR << std::endl;
-                std::cout << "\033[34mPER_SOURCE_FILES\033[0m : " << PER_SOURCE_FILES << " \033[32m# Save logs in files OUT_DIR/{source}.log\033[0m" << std::endl;
+                std::cout << "\033[34mPER_SOURCE_FILES\033[0m : " << (PER_SOURCE_FILES ? "true" : "false")
+                          << " \033[32m# Save logs in files OUT_DIR/{source}.log\033[0m" << std::endl;
                 std::cout << "\033[34mR_LEVEL\033[0m          : " << R_LEVEL << std::endl;
                 std::cout << "\033[34mY_LEVEL\033[0m          : " << Y_LEVEL << std::endl;
                 std::cout << "\033[34mG_LEVEL\033[0m          : " << G_LEVEL << std::endl;
