@@ -3,9 +3,11 @@
 #include <memory>
 #include <unordered_map>
 
-namespace d3156::PluginCore {
+namespace d3156::PluginCore
+{
     struct IPluginLoaderLib;
-    class Core {
+    class Core
+    {
     public:
         Core(int argc, char *argv[]);
         ~Core();
@@ -14,6 +16,6 @@ namespace d3156::PluginCore {
         void loadPlugins();
 
         ModelsStorage models_;
-        std::unordered_map<std::string, std::unique_ptr<IPluginLoaderLib> > libs_;
+        std::unordered_map<std::string, std::unique_ptr<IPluginLoaderLib>> libs_;
     };
 } // namespace d3156::PluginCore

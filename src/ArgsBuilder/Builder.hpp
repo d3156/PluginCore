@@ -4,9 +4,10 @@
 #include <string>
 #include <vector>
 
-namespace d3156 {
-    template<typename T>
-    bool from_string(const char *str, T &val) {
+namespace d3156
+{
+    template <typename T> bool from_string(const char *str, T &val)
+    {
         const std::string data(str);
         if (data.empty()) return false;
         std::istringstream iss(data);
@@ -17,11 +18,14 @@ namespace d3156 {
         return !iss.fail();
     }
 
-    namespace Args {
+    namespace Args
+    {
         void printHeader(int argc, char *argv[]);
 
-        class Builder {
-            class AbstractOption {
+        class Builder
+        {
+            class AbstractOption
+            {
             protected:
                 bool parsed_ = false;
 
@@ -43,25 +47,28 @@ namespace d3156 {
                 virtual ~AbstractOption() = default;
             };
 
-            template<class Type>
-            class Param : public AbstractOption {
+            template <class Type> class Param : public AbstractOption
+            {
             public:
                 Type &value_;
 
                 Param(Type &value, const TYPE t, const char s, const std::string &l, const std::string &d)
-                    : AbstractOption(t, s, l, d), value_(value) {
+                    : AbstractOption(t, s, l, d), value_(value)
+                {
                 }
 
-                bool parse(const char *str) override {
+                bool parse(const char *str) override
+                {
                     const bool ok = from_string(str, value_);
-                    parsed_ = true;
+                    parsed_       = true;
                     return ok;
                 }
 
                 ~Param() override = default;
             };
 
-            class Flag : public AbstractOption {
+            class Flag : public AbstractOption
+            {
             public:
                 bool &value_;
 
@@ -77,23 +84,27 @@ namespace d3156 {
 
             Builder &parse(int argc, char *argv[]);
 
-            template<class Type>
-            Builder &addOption(Type &value, char short_name, std::string long_name = "", std::string description = "") {
+            template <class Type>
+            Builder &addOption(Type &value, char short_name, std::string long_name = "", std::string description = "")
+            {
                 return addParam(new Param<Type>(value, AbstractOption::OPTION, short_name, long_name, description));
             }
 
-            template<class Type>
-            Builder &addParam(Type &value, char short_name, std::string long_name = "", std::string description = "") {
+            template <class Type>
+            Builder &addParam(Type &value, char short_name, std::string long_name = "", std::string description = "")
+            {
                 return addParam(new Param<Type>(value, AbstractOption::PARAM, short_name, long_name, description));
             }
 
-            template<class Type>
-            Builder &addOption(Type &value, std::string long_name = "", std::string description = "") {
+            template <class Type>
+            Builder &addOption(Type &value, std::string long_name = "", std::string description = "")
+            {
                 return addParam(new Param<Type>(value, AbstractOption::OPTION, '\0', long_name, description));
             }
 
-            template<class Type>
-            Builder &addParam(Type &value, std::string long_name = "", std::string description = "") {
+            template <class Type>
+            Builder &addParam(Type &value, std::string long_name = "", std::string description = "")
+            {
                 return addParam(new Param<Type>(value, AbstractOption::PARAM, '\0', long_name, description));
             }
 

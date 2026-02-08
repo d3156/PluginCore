@@ -10,6 +10,7 @@ void {model_name}::postInit(){
 
 void {model_name}::registerArgs(d3156::Args::Builder &bldr)
 {
-    bldr.setVersion("{model_name} " + std::string({model_name}_VERSION))
-        .addOption(configPath, "{model_name}Path", "path to config for {model_name}.json");
+    bldr.setVersion(FULL_NAME).addOption(configPath, "{model_name}Path", "path to config for {model_name}.json");
 }
+
+std::string {model_name}::name() { return FULL_NAME; }

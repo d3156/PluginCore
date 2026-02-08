@@ -2,10 +2,12 @@
 #include "./ArgsBuilder/Builder.hpp"
 #include "IModel.hpp"
 
-namespace d3156::PluginCore {
+namespace d3156::PluginCore
+{
     class Core;
 
-    class IPlugin {
+    class IPlugin
+    {
     public:
         virtual ~IPlugin() = default;
 
@@ -14,13 +16,11 @@ namespace d3156::PluginCore {
         /// \brief registerArgs Зарегистрировать аргументы командной строки
         /// \param bldr Анализатор командной строки
         /// \note Значения аргументов распарсятся до postInit
-        virtual void registerArgs(Args::Builder &bldr) {
-        }
+        virtual void registerArgs(Args::Builder &bldr) {}
 
         /// \brief postInit Дополнительная инициализация плагина, если требуется
         /// \note Вызывается после postInit всех моделей
-        virtual void postInit() {
-        }
+        virtual void postInit() {}
     };
 
     /// C ABI точки входа (имена должны совпасть с dlsym/GetProcAddress)

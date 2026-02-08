@@ -1,6 +1,5 @@
 #include "Builder.hpp"
 #include "Logger/Log.hpp"
-#include <cstddef>
 #include <iomanip>
 #include <iostream>
 #include <string>

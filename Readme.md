@@ -119,7 +119,7 @@ Model destruction order is controlled by `deleteOrder()`: the smaller the value,
 To register/get a model you can use the macro:
 
 ```cpp
-RegisterModel(model_name, new_model, T)
+models.registerModel<T>()
 ```
 
 It returns an existing model if it is already registered; otherwise it registers the provided one.

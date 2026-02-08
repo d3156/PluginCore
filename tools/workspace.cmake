@@ -16,6 +16,12 @@ function(create_target TYPE)
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     )
+    set(FINAL_HASH "")
+    foreach(source_file ${SRC_FILES})
+        file(MD5 ${source_file} FILE_MD5)
+        string(MD5 FINAL_HASH "${FINAL_HASH}${FILE_MD5}" )
+    endforeach()   
+    message(STATUS "Model ${PROJECT_NAME} FINAL_HASH: ${FINAL_HASH}")
 
     if(${TYPE} STREQUAL "library-shared")
         add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
@@ -41,6 +47,7 @@ function(create_target TYPE)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         $<$<COMPILE_LANGUAGE:CXX>:LOG_NAME="${PROJECT_NAME}">
     )
+    target_compile_definitions(${PROJECT_NAME} PRIVATE FULL_NAME="${PROJECT_NAME}_${PROJECT_VERSION}:${FINAL_HASH}")
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
 

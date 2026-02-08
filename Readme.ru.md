@@ -111,7 +111,7 @@ code --install-extension vscode-icons-team.vscode-icons
 Для регистрации/получения модели можно использовать макрос:
 
 ```cpp
-RegisterModel(model_name, new_model, T)
+models.registerModel<T>()
 ```
 
 Он вернёт уже существующую модель, если она зарегистрирована, иначе зарегистрирует переданную.

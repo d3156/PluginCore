@@ -1,15 +1,14 @@
 #include "{plugin_name}.hpp"
 
 void {plugin_name}::registerArgs(d3156::Args::Builder& bldr) {
-    bldr.setVersion("{plugin_name} " + std::string({plugin_name}_VERSION))
-        .addOption(configPath, "{plugin_name}Path", "path to config for {plugin_name}.json");
+    bldr.setVersion(FULL_NAME).addOption(configPath, "{plugin_name}Path", "path to config for {plugin_name}.json");
 }
 
 void {plugin_name}::registerModels(d3156::PluginCore::ModelsStorage& models) {
 // IF_WITH_MODEL:
-    auto model = RegisterModel("{model_name}", new {model_name}(), {model_name});    
+    auto model = models.registerModel<{model_name}>();
 // END_IF:
-    // auto model = RegisterModel("Model", new Model(), Model);
+    // auto model = models.registerModel<{model_name}>();
     (void)models;
 }
 

@@ -109,9 +109,8 @@ namespace d3156
                         formatted.replace(match.position(0), match.length(0), buf);
                         f_start = formatted.cbegin() + match.position(0) + std::strlen(buf);
                     }
-
+                    std::string color;
                     if (OUT == OutType::CONSOLE) {
-                        std::string color;
                         switch (type) {
                             case LogType::RED: color = "\033[31m"; break;
                             case LogType::YELLOW: color = "\033[33m"; break;
@@ -119,8 +118,15 @@ namespace d3156
                             case LogType::WHITE: color = "\033[0m"; break;
                         }
                         replace_all(formatted, "{source}", color + source + "\033[0m");
-                    } else
-                        replace_all(formatted, "{source}", source);
+                    } else {
+                        switch (type) {
+                            case LogType::RED: color = "RED_"; break;
+                            case LogType::YELLOW: color = "YELLOW_"; break;
+                            case LogType::GREEN: color = "GREEN_"; break;
+                            case LogType::WHITE: color = ""; break;
+                        }
+                        replace_all(formatted, "{source}", color + source + "\033[0m");
+                    }
                     // --- replace other placeholders ---
                     replace_all(formatted, "{file}", file);
                     replace_all(formatted, "{line}", std::to_string(line));

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(PluginCore
-  VERSION 1.1.0
+  VERSION 1.1.1
   LANGUAGES CXX
 )
 
