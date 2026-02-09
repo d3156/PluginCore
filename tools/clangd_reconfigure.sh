@@ -1,5 +1,6 @@
 #!/bin/sh
-
+workspace=$(realpath "$(dirname "$(realpath $0)")/../../..")
+cd ${workspace}
 start_dir=$PWD
 output_file="$start_dir/compile_commands.json"
 

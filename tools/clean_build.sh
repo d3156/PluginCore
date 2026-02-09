@@ -1,5 +1,6 @@
 #!/bin/sh
-
+workspace=$(realpath "$(dirname "$(realpath $0)")/../../..")
+cd ${workspace}
 start_dir="${1:-.}"
 
 find "$start_dir" -type d -name build | while IFS= read -r d; do

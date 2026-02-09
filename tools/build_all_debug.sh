@@ -1,5 +1,6 @@
 #!/bin/sh
-
+workspace=$(realpath "$(dirname "$(realpath $0)")/../../..")
+cd ${workspace}/PluginsSource
 start_dir=$PWD
 
 find "$start_dir" -type f -name 'CMakeLists.txt' | while IFS= read -r cmake_file; do

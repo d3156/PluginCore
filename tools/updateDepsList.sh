@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-cd PluginsSource
+
+workspace=$(realpath "$(dirname "$(realpath $0)")/../../..")
+cd ${workspace}/PluginsSource
 rm -f list
 wget -q https://raw.githubusercontent.com/d3156/PluginCore_SourcesList/main/list
 
