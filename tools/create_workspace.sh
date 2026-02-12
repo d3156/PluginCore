@@ -14,7 +14,7 @@ echo "\033[32m[0/8]\033[0m Using workspace: ${WS}"
 mkdir -p "${WS}/Plugins" "${WS}/PluginsSource" "${WS}/core"  "${WS}/configs"
 cd ${WS}
 
-API="https://gitlab.bubki.zip/api/v4/projects/d3156%2FPluginCore/releases/permalink/latest"
+API="https://api.github.com/repos/d3156/PluginCore/releases/latest"
 
 echo "\033[32m[1/8]\033[0m Cloning PluginCore repo."
 git clone https://gitlab.bubki.zip/d3156/PluginCore.git "${WS}/core/PluginCore"
@@ -24,14 +24,14 @@ ln -s ./core/PluginCore/tools tools
 get_url_by_regex() {
   local re="$1"
   curl -fsSL "${API}" \
-    | jq -r --arg re "${re}" '.assets.links[]? | select(.name | test($re)) | .direct_download_url // .download_url' \
+    | jq -r --arg re "${re}" '.assets[] | select(.name? | test($re)) | .browser_download_url' \
     | head -n1
 }
 
 get_name_by_regex() {
   local re="$1"
   curl -fsSL "${API}" \
-    | jq -r --arg re "${re}" '.assets.links[]? | select(.name | test($re)) | .name' \
+    | jq -r --arg re "${re}" '.assets[] | select(.name? | test($re)) | .name' \
     | head -n1
 }
 
