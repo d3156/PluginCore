@@ -12,7 +12,7 @@ sh <(curl -fsSL https://gitlab.bubki.zip/d3156/PluginCore/-/raw/main/tools/creat
 ```
 Runtime-workspace
 ```bash
-sh <(curl -fsSL https://gitlab.bubki.zip/d3156/PluginCore/-/raw/main/tools/create_workspace.sh)
+sh <(curl -fsSL https://gitlab.bubki.zip/d3156/PluginCore/-/raw/main/tools/runtime_install.sh)
 ```
 
 Answer the script prompts (workspace name, etc.). Process substitution <( ... ) lets bash execute the downloaded script without saving it as a file. 

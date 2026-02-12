@@ -13,7 +13,7 @@ sh <(curl -fsSL https://gitlab.bubki.zip/d3156/PluginCore/-/raw/main/tools/creat
 ```
 workspace для запуска
 ```bash
-sh <(curl -fsSL https://gitlab.bubki.zip/d3156/PluginCore/-/raw/main/tools/create_workspace.sh)
+sh <(curl -fsSL https://gitlab.bubki.zip/d3156/PluginCore/-/raw/main/tools/runtime_install.sh)
 ```
 
 Ответьте на вопросы скрипта (имя workspace и т. д.). Подстановка процесса <( ... ) позволяет bash выполнить скачанный скрипт без сохранения его в файл.
