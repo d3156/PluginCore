@@ -5,7 +5,6 @@ need_cmd jq
 need_cmd sudo
 need_cmd dpkg
 
-# Установка библиотек (раньше, шаг 1)
 apt-get update && apt-get install -y \
     wget curl jq libboost-system-dev libboost-filesystem-dev \
     libboost-program-options-dev libboost-thread-dev libboost-chrono-dev \
@@ -16,9 +15,10 @@ DEFAULT_NAME="PluginWorkspace"
 read -r -p "Workspace name [${DEFAULT_NAME}]: " WS_NAME
 WS_NAME="${WS_NAME:-$DEFAULT_NAME}"
 WS="${PWD}/${WS_NAME}"
-echo "\033[32m[0/6]\033[0m Using workspace: ${WS}"
+echo "\033[32m[0/4]\033[0m Using workspace: ${WS}"
 mkdir -p "${WS}/Plugins" "${WS}/PluginsSource" "${WS}/core" "${WS}/configs"
 cd "${WS}"
+echo "\033[32m[1/4]\033[0m Maked path: ${WS}"
 
 API="https://api.github.com/repos/d3156/PluginCore/releases/latest"
 get_url_by_regex() {
@@ -46,22 +46,18 @@ download_asset() {
   curl -fL -o "${WS}/${name}" "${url}"
 }
 
-# [1/6] Загрузка загрузчика (PluginLoader)
-echo "\033[32m[1/6]\033[0m Download PluginLoader"
+echo "\033[32m[2/4]\033[0m Download PluginLoader"
 download_asset '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$'
 PLUGINLOADER_NAME="$(get_name_by_regex '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$')"
 chmod +x "${WS}/${PLUGINLOADER_NAME}"
 ln -sf "${WS}/${PLUGINLOADER_NAME}" "${WS}/PluginLoader"
 
-# [2/6] Загрузка deb-пакетов
-echo "\033[32m[2/6]\033[0m Download d3156-plugincore.deb and d3156-plugincore-dev.deb"
+echo "\033[32m[3/4]\033[0m Download d3156-plugincore.deb and d3156-plugincore-dev.deb"
 download_asset '^d3156-plugincore_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$'
-download_asset '^d3156-plugincore-dev_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$'
 
-# [3/6] Установка deb-пакетов (runtime + dev)
-echo "\033[32m[3/6]\033[0m Install deb packages"
-sudo dpkg -i "${WS}"/d3156-plugincore*.deb
-rm -f "${WS}"/d3156-plugincore*.deb
+echo "\033[32m[4/4]\033[0m Install deb packages"
+sudo dpkg -i "${WS}"/d3156-plugincore*
+rm -f "${WS}"/d3156-plugincore*
 
 echo "\033[32m[OK]\033[0m Workspace ready at ${WS} (no sources, only loader/plugins setup)"
 tree -L 2 "${WS}"
