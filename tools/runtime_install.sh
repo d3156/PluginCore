@@ -60,5 +60,20 @@ echo "\033[32m[4/4]\033[0m Install deb packages"
 sudo dpkg -i "${WS}"/d3156-plugincore*
 rm -f "${WS}"/d3156-plugincore*
 
+cat > start.sh << 'EOF'
+#!/usr/bin/env bash
+export FORMAT="|{date:%H:%M:%S}|{source}|{message}"
+export OUT="FILE"
+export OUT_DIR="./logs/"
+export PER_SOURCE_FILES="true"
+export R_LEVEL="1"
+export Y_LEVEL="1"
+export G_LEVEL="1"
+export W_LEVEL="1"
+exec ./PluginLoader "$@"
+EOF
+chmod +x start.sh
+
 echo "\033[32m[OK]\033[0m Workspace ready at ${WS} (no sources, only loader/plugins setup)"
 tree -L 2 "${WS}"
+
