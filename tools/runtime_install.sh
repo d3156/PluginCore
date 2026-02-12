@@ -5,7 +5,8 @@ need_cmd jq
 need_cmd sudo
 need_cmd dpkg
 
-apt-get update && apt-get install -y \
+sudo apt-get update
+sudo apt-get install -y \
     wget curl jq libboost-system-dev libboost-filesystem-dev \
     libboost-program-options-dev libboost-thread-dev libboost-chrono-dev \
     libboost-date-time-dev libboost-atomic-dev libboost-json-dev \
