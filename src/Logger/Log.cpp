@@ -125,7 +125,7 @@ namespace d3156
                             case LogType::GREEN: color = "GREEN_"; break;
                             case LogType::WHITE: color = ""; break;
                         }
-                        replace_all(formatted, "{source}", color + source + "\033[0m");
+                        replace_all(formatted, "{source}", color + source);
                     }
                     // --- replace other placeholders ---
                     replace_all(formatted, "{file}", file);

@@ -74,6 +74,58 @@ exec ./PluginLoader "$@"
 EOF
 chmod +x start.sh
 
+cat << 'OUT_EOF' > setup-autostart.sh
+#!/usr/bin/env bash
+need_cmd() { 
+  command -v "$1" >/dev/null 2>&1 || { 
+    echo "Missing: $1" >&2; 
+    exit 1 
+  }; 
+}
+need_cmd systemctl
+
+WS="$(realpath .)"
+SERVICE_NAME="plugin-workspace"
+
+cat > "/etc/systemd/system/${SERVICE_NAME}.service" << SERVICE_EOF
+[Unit]
+Description=PluginCore Workspace
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=${WS}
+Environment="FORMAT=|{date:%H:%M:%S}|{source}|{message}"
+Environment="OUT=FILE"
+Environment="OUT_DIR=./logs/"
+Environment="PER_SOURCE_FILES=true"
+Environment="R_LEVEL=1"
+Environment="Y_LEVEL=1"
+Environment="G_LEVEL=1"
+Environment="W_LEVEL=1"
+ExecStart=${WS}/start.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+systemctl daemon-reload
+systemctl enable "${SERVICE_NAME}.service"
+systemctl start "${SERVICE_NAME}.service"
+
+echo "✅ Сервис ${SERVICE_NAME} создан и запущен"
+echo "📋 Статус: sudo systemctl status ${SERVICE_NAME}"
+echo "📋 Логи:   sudo journalctl -u ${SERVICE_NAME} -f"
+echo "🔄 Перезапуск: sudo systemctl restart ${SERVICE_NAME}"
+OUT_EOF
+
+chmod +x setup-autostart.sh
+
 echo "\033[32m[OK]\033[0m Workspace ready at ${WS} (no sources, only loader/plugins setup)"
 tree -L 2 "${WS}"
 
