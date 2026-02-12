@@ -17,7 +17,7 @@ read -r -p "Workspace name [${DEFAULT_NAME}]: " WS_NAME
 WS_NAME="${WS_NAME:-$DEFAULT_NAME}"
 WS="${PWD}/${WS_NAME}"
 echo "\033[32m[0/4]\033[0m Using workspace: ${WS}"
-mkdir -p "${WS}/Plugins" "${WS}/core" "${WS}/configs"
+mkdir -p "${WS}/Plugins" "${WS}/core" "${WS}/configs" "${WS}/logs"
 cd "${WS}"
 echo "\033[32m[1/4]\033[0m Maked path: ${WS}"
 
