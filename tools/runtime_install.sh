@@ -72,7 +72,16 @@ export G_LEVEL="1"
 export W_LEVEL="1"
 exec ./PluginLoader "$@"
 EOF
-chmod +x start.sh
+
+cat > stop.sh << 'EOF'
+#!/usr/bin/env bash
+sudo systemctl stop plugin-workspace
+EOF
+
+cat > restart.sh << 'EOF'
+#!/usr/bin/env bash
+sudo systemctl restart plugin-workspace
+EOF
 
 cat << 'OUT_EOF' > setup-autostart.sh
 #!/usr/bin/env bash
@@ -121,9 +130,12 @@ systemctl start "${SERVICE_NAME}.service"
 echo "✅ Сервис ${SERVICE_NAME} создан и запущен"
 echo "📋 Статус: sudo systemctl status ${SERVICE_NAME}"
 echo "📋 Логи:   sudo journalctl -u ${SERVICE_NAME} -f"
-echo "🔄 Перезапуск: sudo systemctl restart ${SERVICE_NAME}"
+echo "🔄 Перезапуск: ./restart.sh"
 OUT_EOF
 
+chmod +x start.sh
+chmod +x stop.sh
+chmod +x restart.sh
 chmod +x setup-autostart.sh
 
 echo "\033[32m[OK]\033[0m Workspace ready at ${WS} (no sources, only loader/plugins setup)"
