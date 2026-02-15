@@ -5,3 +5,4 @@ release
 _CPack_Packages
 *.deb
 */build
+.idea

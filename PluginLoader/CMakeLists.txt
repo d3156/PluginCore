@@ -15,3 +15,6 @@ add_executable(${TARGET_NAME}
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_20)
 
 target_link_libraries(${TARGET_NAME} PRIVATE d3156::PluginCore)
+
+get_target_property(PC_INCLUDES d3156::PluginCore INTERFACE_INCLUDE_DIRECTORIES)
+message(STATUS "PluginCore includes: ${PC_INCLUDES}")

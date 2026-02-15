@@ -1,0 +1,133 @@
+stages:
+  - build
+  - release
+
+variables:
+  BUILD_TYPE: Release
+  RELEASE_DIR: release
+  CCACHE_DIR: $CI_PROJECT_DIR/.ccache
+
+# --- Шаблон сборки ---
+.build_template: &build_template
+  stage: build
+  image: ubuntu:24.04
+  before_script:
+    - apt-get update
+    - apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release tree
+    - apt-get install -y  build-essential cmake dpkg-dev ccache
+      gcc-12-arm-linux-gnueabihf g++-12-arm-linux-gnueabihf
+      gcc-13-aarch64-linux-gnu g++-13-aarch64-linux-gnu wget git
+      qemu-user-static
+    # Настройка ccache
+    - export PATH="/usr/lib/ccache:$PATH"
+    - ccache -M 5G
+
+  script:
+    - echo "Building for ARCH=$ARCH"
+    # Build / install каталоги для каждой архитектуры отдельно
+    - BUILD_DIR="build_$ARCH"
+    - INSTALL_DIR="install_$ARCH"
+    - rm -rf $BUILD_DIR $INSTALL_DIR $RELEASE_DIR _CPack_Packages
+    - mkdir -p $BUILD_DIR $INSTALL_DIR $RELEASE_DIR
+
+    # --- Сборка PluginCore ---
+    - cmake -S . -B $BUILD_DIR
+      -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      -DCPACK_DEBIAN_PACKAGE_ARCHITECTURE=$ARCH
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      $CMAKE_TOOLCHAIN_ARGS
+    - cmake --build $BUILD_DIR --verbose -j$(nproc)
+    - cmake --install $BUILD_DIR --prefix $INSTALL_DIR
+    - cpack --config $BUILD_DIR/CPackConfig.cmake -G DEB
+    - DEB_FILE=$(ls *.deb | head -n1)
+    - mv *.deb $RELEASE_DIR/
+
+    # --- Сборка PluginLoader ---
+    - mkdir -p PluginLoader/$BUILD_DIR
+    - cmake -S PluginLoader -B PluginLoader/$BUILD_DIR
+      -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      -DCMAKE_PREFIX_PATH=${PWD}/$INSTALL_DIR
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      $CMAKE_TOOLCHAIN_ARGS
+    - cmake --build PluginLoader/$BUILD_DIR --verbose -j$(nproc)
+    - mv PluginLoader/$BUILD_DIR/PluginLoader_* $RELEASE_DIR/
+
+  cache:
+    key: global-build-cache
+    paths:
+      - .ccache/
+      - build_amd64/
+      - build_arm64/
+      - build_armhf/
+      - install_amd64/
+      - install_arm64/
+      - install_armhf/
+
+  artifacts:
+    paths:
+      - $RELEASE_DIR/*
+    expire_in: 1 week
+
+# --- AMD64 ---
+build:amd64:
+  <<: *build_template
+  variables:
+    ARCH: amd64
+    CMAKE_TOOLCHAIN_ARGS: ""
+
+# --- ARM64 ---
+build:arm64:
+  <<: *build_template
+  variables:
+    ARCH: arm64
+    CMAKE_TOOLCHAIN_ARGS: >
+      -DCMAKE_SYSTEM_NAME=Linux
+      -DCMAKE_SYSTEM_PROCESSOR=aarch64
+      -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc-13
+      -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++-13
+
+# --- ARMhf / ARMv7 ---
+build:armhf:
+  <<: *build_template
+  variables:
+    ARCH: armhf
+    CMAKE_TOOLCHAIN_ARGS: >
+      -DCMAKE_SYSTEM_NAME=Linux
+      -DCMAKE_SYSTEM_PROCESSOR=arm
+      -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc-12
+      -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++-12
+
+# --- Multi-arch Release ---
+release:multiarch:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  needs:
+    - job: build:amd64
+      artifacts: true
+    - job: build:arm64
+      artifacts: true
+    - job: build:armhf
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - mkdir -p release_assets
+    - find . -name "*.deb" -exec cp {} release_assets/ \; || true
+    - find . -name "PluginLoader_*" -exec cp {} release_assets/ \; || true
+    - ls -la release_assets/
+    - "echo 'Release assets ready: $(ls release_assets/ | wc -l) files'"
+    # --- вместо release: используем glab ---
+    - glab auth login --hostname gitlab.bubki.zip --token "$GLAB_TOKEN"
+    # Создание релиза
+    - glab release create "$CI_COMMIT_TAG" --name "Multi-arch Release $CI_COMMIT_TAG" --notes "PluginCore + PluginLoader"
+    # Загрузка ассетов
+    - glab release upload "$CI_COMMIT_TAG" release_assets/*
+  artifacts:
+    paths:
+      - release_assets/*
+    expire_in: never
+
+
+
