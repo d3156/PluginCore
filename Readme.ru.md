@@ -1,4 +1,4 @@
-[English](Readme.md) | [Русский](Readme.ru.md)
+[English](README.md) | [Русский](Readme.ru.md)
 
 # PluginCore
 
@@ -126,7 +126,7 @@ models.registerModel<T>()
 
 Хост-приложение обычно просто создаёт `PluginCore::Core`:
 ```cpp
-#include <PluginCore/Core.hpp>
+#include <PluginCore/Core>
 
 #include <csignal>
 #include <cerrno>
@@ -189,8 +189,8 @@ cpack --config build/CPackConfig.cmake -G DEB
 
 ```cpp
 // MyPlugin.cpp
-#include <PluginCore/IPlugin.hpp>
-#include <PluginCore/IModel.hpp>
+#include <PluginCore/IPlugin>
+#include <PluginCore/IModel>
 
 class MyPlugin final : public PluginCore::IPlugin {
 public:

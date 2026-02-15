@@ -1,4 +1,4 @@
-#include <PluginCore/Core.hpp>
+#include <PluginCore/Core>
 
 #include <csignal>
 #include <cerrno>

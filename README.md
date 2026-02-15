@@ -1,4 +1,4 @@
-[English](Readme.md) | [Русский](Readme.ru.md)
+[English](README.md) | [Русский](Readme.ru.md)
 
 # PluginCore
 
@@ -133,7 +133,7 @@ It returns an existing model if it is already registered; otherwise it registers
 
 A host application typically just creates `PluginCore::Core`:
 ```cpp
-#include <PluginCore/Core.hpp>
+#include <PluginCore/Core>
 
 #include <csignal>
 #include <cerrno>
@@ -198,8 +198,8 @@ Minimal skeleton:
 
 ```cpp
 // MyPlugin.cpp
-#include <PluginCore/IPlugin.hpp>
-#include <PluginCore/IModel.hpp>
+#include <PluginCore/IPlugin>
+#include <PluginCore/IModel>
 
 class MyPlugin final : public PluginCore::IPlugin {
 public:

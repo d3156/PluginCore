@@ -30,8 +30,6 @@ function(create_target TYPE)
     elseif(${TYPE} STREQUAL "model")
         add_library(${PROJECT_NAME} STATIC ${SRC_FILES})
         set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-        find_package(PluginCore REQUIRED)
-        target_link_libraries(${PROJECT_NAME} PRIVATE d3156::PluginCore)
     elseif(${TYPE} STREQUAL "plugin")
         add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
         set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -39,10 +37,9 @@ function(create_target TYPE)
             RUNTIME_OUTPUT_DIRECTORY "${PLUGINS_OUTPUT_DIR}"
             OUTPUT_NAME "${PROJECT_NAME}"
         )
-        find_package(PluginCore REQUIRED)
-        target_link_libraries(${PROJECT_NAME} PRIVATE d3156::PluginCore)
     endif()
-
+    find_package(PluginCore CONFIG REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE d3156::PluginCore)
     target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         $<$<COMPILE_LANGUAGE:CXX>:LOG_NAME="${PROJECT_NAME}">
