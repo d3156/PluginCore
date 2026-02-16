@@ -100,7 +100,8 @@ build:armhf:
       -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++-12
 
 # --- Multi-arch Release ---
-release:multiarch:
+
+release:gitlab_release:
   stage: release
   image: registry.gitlab.com/gitlab-org/cli:latest
   needs:
@@ -117,17 +118,63 @@ release:multiarch:
     - find . -name "*.deb" -exec cp {} release_assets/ \; || true
     - find . -name "PluginLoader_*" -exec cp {} release_assets/ \; || true
     - ls -la release_assets/
-    - "echo 'Release assets ready: $(ls release_assets/ | wc -l) files'"
+    - echo 'Release assets ready $(ls release_assets/ | wc -l) files'
     # --- вместо release: используем glab ---
     - glab auth login --hostname gitlab.bubki.zip --token "$GLAB_TOKEN"
-    # Создание релиза
     - glab release create "$CI_COMMIT_TAG" --name "Multi-arch Release $CI_COMMIT_TAG" --notes "PluginCore + PluginLoader"
-    # Загрузка ассетов
     - glab release upload "$CI_COMMIT_TAG" release_assets/*
   artifacts:
     paths:
       - release_assets/*
     expire_in: never
 
-
+release:github_release:
+  stage: release
+  image: alpine:latest
+  needs:
+    - job: build:amd64
+      artifacts: true
+    - job: build:arm64
+      artifacts: true
+    - job: build:armhf
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_TAG
+  variables:
+    APK_CACHE_DIR: $CI_PROJECT_DIR/.cache/apk
+  cache:
+    key: 
+      files:
+        - gh_version.txt
+    paths:
+      - .cache/apk/
+      - /usr/local/bin/gh
+  before_script:
+    - mkdir -p $APK_CACHE_DIR
+    - apk update --cache-dir $APK_CACHE_DIR
+    - apk add --cache-dir $APK_CACHE_DIR --no-cache git curl
+    - |
+      if [ -f /usr/local/bin/gh ] && /usr/local/bin/gh --version; then 
+        echo "gh from cache"; 
+      else
+        GH_VERSION=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')
+        curl -L -o gh.tar.gz https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz
+        tar -xzf gh.tar.gz
+        mv gh_${GH_VERSION}_linux_amd64/bin/gh /usr/local/bin/
+        chmod +x /usr/local/bin/gh
+      fi
+    - gh --version
+  script:
+    - mkdir -p release_assets
+    - find . -name "*.deb" -exec cp {} release_assets/ \; || true
+    - find . -name "PluginLoader_*" -exec cp {} release_assets/ \; || true
+    - ls -la release_assets/
+    - echo 'Release assets ready $(ls release_assets/ | wc -l) files'
+    # github
+    - export GH_TOKEN="$GH_TOKEN"
+    - gh release create "$CI_COMMIT_TAG" release_assets/* --repo d3156/PluginCore --title "Multi-arch Release $CI_COMMIT_TAG" --notes "PluginCore + PluginLoader"
+  artifacts:
+    paths:
+      - release_assets/*
+    expire_in: never
 
