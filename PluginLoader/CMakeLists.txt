@@ -6,7 +6,7 @@ find_package(PluginCore CONFIG REQUIRED)
 
 message(STATUS "PluginCore version: ${PluginCore_VERSION}")
 
-set(TARGET_NAME "PluginLoader_${PluginCore_VERSION}")
+set(TARGET_NAME "PluginLoader_${PluginCore_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
 
 add_executable(${TARGET_NAME}
   src/main.cpp
