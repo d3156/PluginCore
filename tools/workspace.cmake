@@ -16,12 +16,15 @@ function(create_target TYPE)
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     )
+    list(SORT SRC_FILES)
     set(FINAL_HASH "")
+
     foreach(source_file ${SRC_FILES})
         file(MD5 ${source_file} FILE_MD5)
-        string(MD5 FINAL_HASH "${FINAL_HASH}${FILE_MD5}" )
-    endforeach()   
-    message(STATUS "Model ${PROJECT_NAME} FINAL_HASH: ${FINAL_HASH}")
+        string(MD5 FINAL_HASH "${FINAL_HASH}${FILE_MD5}")
+    endforeach()
+
+    message(STATUS "${PROJECT_NAME} FINAL_HASH: ${FINAL_HASH}")
 
     if(${TYPE} STREQUAL "library-shared")
         add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
@@ -37,66 +40,106 @@ function(create_target TYPE)
             RUNTIME_OUTPUT_DIRECTORY "${PLUGINS_OUTPUT_DIR}"
             OUTPUT_NAME "${PROJECT_NAME}"
         )
+    else()
+        message(FATAL_ERROR "Unknown target type: ${TYPE}")
     endif()
+
     find_package(PluginCore CONFIG REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE d3156::PluginCore)
     target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         $<$<COMPILE_LANGUAGE:CXX>:LOG_NAME="${PROJECT_NAME}">
+        FULL_NAME="${PROJECT_NAME}_${PROJECT_VERSION}:${FINAL_HASH}"
     )
-    target_compile_definitions(${PROJECT_NAME} PRIVATE FULL_NAME="${PROJECT_NAME}_${PROJECT_VERSION}:${FINAL_HASH}")
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
 
-function(dependency PATH DEP_NAME)
-    set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${PATH}")
+function(find_project_cmake PROJECT_NAME START_DIR OUT_PATH)
+    message(STATUS "Find ${PROJECT_NAME} in ${START_DIR}")
+    file(GLOB_RECURSE CMAKE_FILES_ ABSOLUTE "${START_DIR}/**/CMakeLists.txt")
+
+    foreach(CMAKE_FILE ${CMAKE_FILES_})
+        file(READ "${CMAKE_FILE}" CONTENT)
+        string(TOUPPER "${CONTENT}" CONTENT_UPPER)
+        string(TOUPPER "${PROJECT_NAME}" PROJECT_UPPER)
+        string(FIND "${CONTENT_UPPER}" "PROJECT(${PROJECT_UPPER}" INDEX)
+
+        if(NOT INDEX EQUAL -1)
+            get_filename_component(FOLDER_PATH "${CMAKE_FILE}" DIRECTORY ABSOLUTE)
+            set(${OUT_PATH} "${FOLDER_PATH}" PARENT_SCOPE)
+            return()
+        endif()
+    endforeach()
+endfunction()
+
+function(get_repo_name GIT_URL OUT_NAME)
+    string(REGEX REPLACE "/$" "" _url "${GIT_URL}")
+    string(REGEX REPLACE ".*/|.*:" "" _name "${_url}")
+    string(REGEX REPLACE "\\.git$" "" _name "${_name}")
+    set(${OUT_NAME} "${_name}" PARENT_SCOPE)
+endfunction()
+
+function(dependency PATH DEP_NAME GIT_URL)
+    set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PATH}")
+    set(LIB_DIR "")
+    find_project_cmake(${DEP_NAME} ${PATH} LIB_DIR)
+
+    if(NOT EXISTS "${LIB_DIR}")
+        message(STATUS "⬇ Cloning EasyHttpLib from ${GIT_URL}")
+        get_repo_name(${GIT_URL} REPO_NAME)
+        execute_process(
+            COMMAND git clone ${GIT_URL} "${PATH}/${REPO_NAME}"
+            RESULT_VARIABLE GIT_RESULT
+        )
+
+        if(NOT GIT_RESULT EQUAL 0)
+            message(FATAL_ERROR "Failed to clone ${GIT_URL}")
+        endif()
+    endif()
+
+    find_project_cmake(${DEP_NAME} ${PATH} LIB_DIR)
+
     get_filename_component(_build_name "${CMAKE_BINARY_DIR}" NAME)
     set(BUILD_DIR "${LIB_DIR}/${_build_name}")
     set(LIB_PATH "${BUILD_DIR}/lib${DEP_NAME}.a")
     set(LIB_TYPE STATIC)
+
+    if(NOT EXISTS "${BUILD_DIR}")
+        file(MAKE_DIRECTORY "${BUILD_DIR}")
+    endif()
+
+    execute_process(
+        COMMAND ${CMAKE_COMMAND}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        "${LIB_DIR}"
+        WORKING_DIRECTORY "${BUILD_DIR}"
+        RESULT_VARIABLE CONFIG_RESULT
+    )
+
+    if(NOT CONFIG_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to configure ${DEP_NAME}")
+    endif()
+
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} --build . --parallel
+        WORKING_DIRECTORY "${BUILD_DIR}"
+        RESULT_VARIABLE BUILD_RESULT
+    )
+
+    if(NOT BUILD_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to build ${DEP_NAME}")
+    endif()
 
     if(NOT EXISTS "${LIB_PATH}")
         set(LIB_TYPE SHARED)
         set(LIB_PATH "${BUILD_DIR}/lib${DEP_NAME}.so")
     endif()
 
-    if(EXISTS "${LIB_PATH}")
-        message(STATUS "✓ Using prebuilt ${DEP_NAME} (${LIB_TYPE}): ${LIB_PATH}")
-        add_library(${DEP_NAME} ${LIB_TYPE} IMPORTED)
-        set_target_properties(${DEP_NAME} PROPERTIES
-            IMPORTED_LOCATION "${LIB_PATH}"
-            INTERFACE_INCLUDE_DIRECTORIES "${LIB_DIR}/include"
-        )
-    else()
-        message(STATUS "⚙️  Building ${DEP_NAME} from source")
-
-        if(NOT EXISTS "${BUILD_DIR}")
-            file(MAKE_DIRECTORY "${BUILD_DIR}")
-            execute_process(
-                COMMAND ${CMAKE_COMMAND}
-                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                "${LIB_DIR}"
-                WORKING_DIRECTORY "${BUILD_DIR}"
-                RESULT_VARIABLE CONFIG_RESULT
-            )
-
-            if(NOT CONFIG_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to configure ${DEP_NAME}")
-            endif()
-
-            execute_process(
-                COMMAND ${CMAKE_COMMAND} --build . --parallel
-                WORKING_DIRECTORY "${BUILD_DIR}"
-                RESULT_VARIABLE BUILD_RESULT
-            )
-
-            if(NOT BUILD_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to build ${DEP_NAME}")
-            endif()
-        endif()
-
-        add_subdirectory("${LIB_DIR}" "${BUILD_DIR}")
-    endif()
-
+    message(STATUS "✓ Using prebuilt ${DEP_NAME} (${LIB_TYPE}): ${LIB_PATH}")
+    add_library(${DEP_NAME} ${LIB_TYPE} IMPORTED)
+    set_target_properties(${DEP_NAME} PROPERTIES
+        IMPORTED_LOCATION "${LIB_PATH}"
+        INTERFACE_INCLUDE_DIRECTORIES "${LIB_DIR}/include"
+    )
     target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_NAME})
 endfunction()
