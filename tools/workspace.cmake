@@ -95,9 +95,9 @@ function(dependency PATH DEP_NAME GIT_URL)
         if(NOT GIT_RESULT EQUAL 0)
             message(FATAL_ERROR "Failed to clone ${GIT_URL}")
         endif()
-    endif()
 
-    find_project_cmake(${DEP_NAME} ${PATH} LIB_DIR)
+        find_project_cmake(${DEP_NAME} ${PATH} LIB_DIR)
+    endif()
 
     get_filename_component(_build_name "${CMAKE_BINARY_DIR}" NAME)
     set(BUILD_DIR "${LIB_DIR}/${_build_name}")
@@ -108,15 +108,33 @@ function(dependency PATH DEP_NAME GIT_URL)
         file(MAKE_DIRECTORY "${BUILD_DIR}")
     endif()
 
+    get_cmake_property(_cache_vars CACHE_VARIABLES)
+    set(_forward_args)
+
+    foreach(var ${_cache_vars})
+        get_property(_type CACHE ${var} PROPERTY TYPE)
+
+        if(NOT _type STREQUAL "INTERNAL" AND NOT _type STREQUAL "STATIC")
+            if(DEFINED ${var})
+                list(APPEND _forward_args "-D${var}=${${var}}")
+            endif()
+        endif()
+    endforeach()
+
+    message(STATUS "cmake -S ${LIB_DIR} ${BUILD_DIR} ${_forward_args}")
     execute_process(
         COMMAND ${CMAKE_COMMAND}
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        "${LIB_DIR}"
-        WORKING_DIRECTORY "${BUILD_DIR}"
+        -S "${LIB_DIR}"
+        -B "${BUILD_DIR}"
+        ${_forward_args}
         RESULT_VARIABLE CONFIG_RESULT
     )
 
     if(NOT CONFIG_RESULT EQUAL 0)
+        message(STATUS "---- ${REPO_NAME} configure stdout ----")
+        message(STATUS "${CONFIG_OUT}")
+        message(STATUS "---- ${REPO_NAME} configure stderr ----")
+        message(STATUS "${CONFIG_ERR}")
         message(FATAL_ERROR "Failed to configure ${DEP_NAME}")
     endif()
 
