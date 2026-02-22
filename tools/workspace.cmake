@@ -50,6 +50,7 @@ function(create_target TYPE)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         $<$<COMPILE_LANGUAGE:CXX>:LOG_NAME="${PROJECT_NAME}">
         FULL_NAME="${PROJECT_NAME}_${PROJECT_VERSION}:${FINAL_HASH}"
+        ARCH_FROM_CI="${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}"
     )
     set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
