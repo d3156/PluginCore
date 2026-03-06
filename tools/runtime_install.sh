@@ -4,6 +4,25 @@ need_cmd curl
 need_cmd jq
 need_cmd sudo
 need_cmd dpkg
+need_cmd uname
+
+# ---- определяем архитектуру ----
+detect_pluginloader_arch() {
+  case "$(uname -m)" in               # даёт x86_64, aarch64, armv7l и т.п. [web:5]
+    x86_64)  echo "x86_64" ;;
+    aarch64) echo "aarch64" ;;
+    armv7l|armv6l|arm) echo "arm" ;;
+    *)
+      echo "Unsupported arch for PluginLoader: $(uname -m)" >&2
+      exit 1
+      ;;
+  esac
+}
+
+PLUGINC_ARCH="$(detect_pluginloader_arch)"
+
+# для deb используем архитектуру dpkg (amd64, arm64, armhf …) [web:12]
+DEB_ARCH="$(dpkg --print-architecture)"
 
 sudo apt-get update
 sudo apt-get install -y \
@@ -48,17 +67,23 @@ download_asset() {
 }
 
 echo "\033[32m[2/4]\033[0m Download PluginLoader"
-download_asset '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$'
-PLUGINLOADER_NAME="$(get_name_by_regex '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$')"
+# PluginLoader_1.1.1_x86_64 / _arm / _aarch64
+PLUGINLOADER_RE="^PluginLoader_[0-9]+\\.[0-9]+\\.[0-9]+_${PLUGINC_ARCH}$"
+download_asset "${PLUGINLOADER_RE}"
+PLUGINLOADER_NAME="$(get_name_by_regex "${PLUGINLOADER_RE}")"
 chmod +x "${WS}/${PLUGINLOADER_NAME}"
 ln -sf "${WS}/${PLUGINLOADER_NAME}" "${WS}/PluginLoader"
 
 echo "\033[32m[3/4]\033[0m Download d3156-plugincore.deb and d3156-plugincore-dev.deb"
-download_asset '^d3156-plugincore_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$'
+# d3156-plugincore_1.1.1_amd64.deb / _arm64 / _armhf …
+RUNTIME_RE="^d3156-plugincore_[0-9]+\\.[0-9]+\\.[0-9]+_${DEB_ARCH}\\.deb$"
+DEV_RE="^d3156-plugincore-dev_[0-9]+\\.[0-9]+\\.[0-9]+_${DEB_ARCH}\\.deb$"
+download_asset "${RUNTIME_RE}"
+download_asset "${DEV_RE}"
 
 echo "\033[32m[4/4]\033[0m Install deb packages"
-sudo dpkg -i "${WS}"/d3156-plugincore*
-rm -f "${WS}"/d3156-plugincore*
+sudo dpkg -i "${WS}"/d3156-plugincore*_"${DEB_ARCH}".deb
+rm -f "${WS}"/d3156-plugincore*_"${DEB_ARCH}".deb
 
 cat > start.sh << 'EOF'
 #!/usr/bin/env bash
@@ -85,11 +110,11 @@ EOF
 
 cat << 'OUT_EOF' > setup-autostart.sh
 #!/usr/bin/env bash
-need_cmd() { 
-  command -v "$1" >/dev/null 2>&1 || { 
-    echo "Missing: $1" >&2; 
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing: $1" >&2;
     exit 1 
-  }; 
+  };
 }
 need_cmd systemctl
 
