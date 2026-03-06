@@ -5,6 +5,27 @@ need_cmd jq
 need_cmd sudo
 need_cmd dpkg
 need_cmd git
+need_cmd uname
+
+# Определяем архитектуру
+detect_arch() {
+  case "$(uname -m)" in
+    x86_64)   echo "x86_64" ;;     # бинарь PluginLoader_..._x86_64
+    aarch64)  echo "aarch64" ;;    # PluginLoader_..._aarch64
+    armv7l|armv6l|arm) echo "arm" ;; # PluginLoader_..._arm
+    *)
+      echo "Unsupported arch: $(uname -m)" >&2
+      exit 1
+      ;;
+  esac
+}
+
+PLUGINC_ARCH="$(detect_arch)"
+
+# для deb нам нужна deb-архитектура dpkg, не uname -m [web:5]
+DEB_ARCH_RUNTIME="$(dpkg --print-architecture)"      # amd64, arm64, armhf и т.п.
+DEB_ARCH_DEV="${DEB_ARCH_RUNTIME}"
+
 DEFAULT_NAME="PluginWorkspace"
 read -r -p "Workspace name [${DEFAULT_NAME}]: " WS_NAME
 WS_NAME="${WS_NAME:-$DEFAULT_NAME}"
@@ -48,10 +69,12 @@ download_asset() {
   curl -fL -o "${WS}/${name}" "${url}"
 }
 
-# --- PluginLoader_X.Y.Z (бинарник) ---
+# --- PluginLoader_X.Y.Z_ARCH (бинарник) ---
 echo "\033[32m[2/8]\033[0m Download PluginLoader"
-download_asset '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$'
-PLUGINLOADER_NAME="$(get_name_by_regex '^PluginLoader_[0-9]+\.[0-9]+\.[0-9]+$')"
+# имя вида PluginLoader_1.1.1_x86_64 / _arm / _aarch64
+PLUGINLOADER_RE="^PluginLoader_[0-9]+\\.[0-9]+\\.[0-9]+_${PLUGINC_ARCH}$"
+download_asset "${PLUGINLOADER_RE}"
+PLUGINLOADER_NAME="$(get_name_by_regex "${PLUGINLOADER_RE}")"
 chmod +x "${WS}/${PLUGINLOADER_NAME}"
 ln -sf "${WS}/${PLUGINLOADER_NAME}" "${WS}/PluginLoader"
 echo "\033[32m[3/8]\033[0m Download sources"
@@ -59,19 +82,21 @@ sh ./tools/updateDepsList.sh
 
 # --- deb пакеты ---
 echo "\033[32m[4/8]\033[0m Download d3156-plugincore.deb"
-download_asset '^d3156-plugincore_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$'
-echo "\033[32m[5/8]\033[0m Download d3156-plugincore-dev.deb"
-download_asset '^d3156-plugincore-dev_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$'
+RUNTIME_RE="^d3156-plugincore_[0-9]+\\.[0-9]+\\.[0-9]+_${DEB_ARCH_RUNTIME}\\.deb$"
+download_asset "${RUNTIME_RE}"
 
-RUNTIME_DEB="${WS}/$(get_name_by_regex '^d3156-plugincore_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$')"
-DEV_DEB="${WS}/$(get_name_by_regex '^d3156-plugincore-dev_[0-9]+\.[0-9]+\.[0-9]+_amd64\.deb$')"
+echo "\033[32m[5/8]\033[0m Download d3156-plugincore-dev.deb"
+DEV_RE="^d3156-plugincore-dev_[0-9]+\\.[0-9]+\\.[0-9]+_${DEB_ARCH_DEV}\\.deb$"
+download_asset "${DEV_RE}"
+
+RUNTIME_DEB="${WS}/$(get_name_by_regex "${RUNTIME_RE}")"
+DEV_DEB="${WS}/$(get_name_by_regex "${DEV_RE}")"
 
 echo "\033[32m[6/8]\033[0m Installing runtime package: ${RUNTIME_DEB}"
 sudo dpkg -i "${RUNTIME_DEB}"
 echo "\033[32m[7/8]\033[0m Installing dev package: ${DEV_DEB}"
 sudo dpkg -i "${DEV_DEB}"
 rm -f "${WS}"/d3156-plugincore*.deb
-# --- deb пакеты ---
 echo "\033[32m[8/8]\033[0m  Workspace succes created"
 echo "\033[32m[OK]\033[0m  Workspace ready at ${WS}"
 tree -L 2 ${WS}
